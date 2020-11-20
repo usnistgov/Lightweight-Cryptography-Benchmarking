@@ -1,0 +1,2 @@
+#!/bin/sh
+gcc -march=native -mtune=native -std=c99 -Wall -Wextra -Wshadow -fsanitize=address,undefined -O2 -I. -Inist -DKAT -o kat nist/kat_hash.c gimli_hash.c     -ldl 

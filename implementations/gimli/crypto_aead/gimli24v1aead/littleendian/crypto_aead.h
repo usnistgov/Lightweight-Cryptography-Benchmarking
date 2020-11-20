@@ -1,0 +1,15 @@
+#ifndef crypto_aead_H
+#define crypto_aead_H
+
+#include "crypto_aead_gimli24v1.h"
+
+#define crypto_aead_encrypt crypto_aead_gimli24v1_encrypt
+#define crypto_aead_decrypt crypto_aead_gimli24v1_decrypt
+#define crypto_aead_KEYBYTES crypto_aead_gimli24v1_KEYBYTES
+#define crypto_aead_NSECBYTES crypto_aead_gimli24v1_NSECBYTES
+#define crypto_aead_NPUBBYTES crypto_aead_gimli24v1_NPUBBYTES
+#define crypto_aead_ABYTES crypto_aead_gimli24v1_ABYTES
+#define crypto_aead_NOOVERLAP crypto_aead_gimli24v1_NOOVERLAP
+#define crypto_aead_PRIMITIVE "gimli24v1"
+
+#endif

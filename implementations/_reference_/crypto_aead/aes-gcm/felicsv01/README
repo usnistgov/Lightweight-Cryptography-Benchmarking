@@ -1,0 +1,461 @@
+Initial file structure
+======================
+
+.                                    -> CipherName_BlockSize_KeySize_NonceSize_StateSize_TagSize_v01
+├── build                            -> Cipher build directory
+└── source                           -> Cipher source directory
+    ├── constants.c                  -> Cipher constants definition
+    ├── constants.h                  -> Cipher constants declaration
+    ├── data_types.h                 -> Cipher data types
+    ├── finalize.c                   -> Cipher state finalization
+    ├── implementation.info          -> Cipher implementation information
+    ├── initialize.c                 -> Cipher state initialization
+    ├── Makefile                     -> Makefile
+    ├── process_associated_data.c    -> Associated data processing
+    ├── proces_ciphertext.c          -> Ciphertext processing
+    ├── process_plaintext.c          -> Plaintext processing
+    ├── README                       -> README file - this file
+    ├── tag_generation.c             -> Tag generation
+    └── test_vectors.c               -> Cipher test vectors
+
+
+
+Add cipher implementation
+=========================
+
+Steps:
+    1. Make a copy of 
+"CipherName_BlockSize_KeySize_NonceSize_StateSize_TagSize_v01" directory in 
+"ciphers" directory.
+
+    2. Rename the copy of the directory to follow the pattern 
+"CipherName_BlockSize_KeySize_NonceSize_StateSize_TagSize_v01".
+        Example: "ASCON_64_128_128_320_128_v01"
+        Note: If you add several implementation for the same cipher (for example
+ one optimized for RAM and one optimized for speed) you can increase the cipher 
+directory name suffix "_v02", "_v03", etc.
+        Example: "ACORN_1_128_128_293_128_v02"
+
+    3. Add cipher implementation:
+        a. Add cipher block size, key size, nonce size, tag size, state size and
+ tag size in "constants.h".
+
+        b. Declare cipher S-boxes and other constants in "constants.h" and 
+define them in "constants.c" or in any other "*.c" file, excepting "*.c" files 
+from Section 3.c.
+        Note: You can use any data type based on "RAM_DATA_*" 
+("RAM_DATA_BYTE", "RAM_DATA_WORD", "RAM_DATA_DOUBLE_WORD") or "ROM_DATA_*" 
+("ROM_DATA_BYTE", "ROM_DATA_WORD", "ROM_DATA_DOUBLE_WORD") depending where you 
+want to store them.
+        Note: If you want to define your custom data types in different 
+scenarios for different architectures use "data_types.h" file.
+            Example:
+                in "data_types.h"
+                    #define SBOX1_BYTE ROM_DATA_BYTE
+                    #define READ_SBOX1_BYTE READ_ROM_DATA_BYTE
+
+                    #define SBOX2_WORD RAM_DATA_WORD
+                    #define READ_SBOX2_WORD READ_RAM_DATA_WORD
+
+                in "constants.h"
+                    extern SBOX1_BYTE SBox1[4];
+                    extern SBOX2_WORD SBox2[2];
+                    extern RAM_DATA_DOUBLE_WORD SBox[1];
+
+                in "constants.c"
+                    SBOX1_BYTE SBox1[4] = { 0x01, 0x02, 0x03, 0x04 };
+                    SBOX2_WORD SBox2[2] = { 0x0201, 0x0403 };
+                    RAM_DATA_DOUBLE_WORD SBox[1] = { 0x04030201 };
+
+        c. If you have constants used by one or more of the following operations
+ (initialize, process associated data, process plaintext/ciphertext, finalize, 
+tag generation), you can define them in separate "*.c" files and declare them in 
+"constants.h" file according to the following rules:
+
+            * Do not use the following names for the added "*.c" files:
+                "main"
+                "cipher"
+                "common"
+                "test_vectors"
+                "initialize"
+                "process_associated_data"
+                "process_plaintext" 
+                "process_ciphertext"
+                "finalize"
+                "tag_generation"
+
+            * Do not add constant definition in "*.h" files, except for macros. 
+Declare the constants in "constants.h" file and define them in "*.c" files.
+
+        d. Declare & define the cipher test vectors in "test_vectors.c". Add two
+ sets of test vectors. One for normal testing with one block size of message and
+ associated data and one with arbitrary length data, preferably, less than a 
+block size.
+
+        e. Implement the initialization in "initialization.c" using the 
+following function signature:
+            void Initialize(uint8_t *state, const unsigned char *key, 
+                            const unsigned char *nonce);
+
+        f. Implement the associated data processing in 
+"process_associated_data.c" using the following function signature:
+            void ProcessAssociatedData(uint8_t *state, uint8_t *associatedData, 
+                                       uint8_t associated_data_len);
+
+        g. Implement the plaintext processing/encryption in 
+"process_plaintext.c" using the following function signature:
+            void ProcessPlaintext(uint8_t *state, uint8_t *message, 
+                                  uint8_t message_len);
+            Note: message here should be input plaintext.
+
+        h. Implement the ciphertext processing in "process_ciphertext.c" using 
+the following function signature:
+            void ProcessCiphertext(uint8_t *state, uint8_t *message, 
+                                   uint8_t message_len);
+            Note: message here should be intermediate ciphertext - output of 
+ProcessPlaintext().
+
+        i. Implement the finalization in "finalize.c" using the following 
+function signature:
+            void Finalize(uint8_t *state, uint8_t *key)
+
+        j. Implement the tag generation in "tag_generation.c" using the 
+following function signature:
+            void TagGeneration(uint8_t *state, uint8_t *tag)
+
+            Notes for sections 3.e. to 3.k
+            1. To read data types based on "RAM_DATA_*" ("RAM_DATA_BYTE", 
+"RAM_DATA_WORD", "RAM_DATA_DOUBLE_WORD") or "ROM_DATA_*" ("ROM_DATA_BYTE", 
+"ROM_DATA_WORD", "ROM_DATA_DOUBLE_WORD") macros use the associated macros.
+            Example:
+                uint8_t SBox1Value = READ_SBOX1_DATA_BYTE(SBox1[0]);
+                uint16_t SBox2Value = READ_SBOX2_DATA_WORD(SBox2[0]);
+                uint32_t SBoxValue = READ_RAM_DATA_DOUBLE_WORD(SBox[0]);
+            2. Do not add constants definitions in files that contain cipher 
+implementation ("initialize.c","process_associated_data.c", 
+"process_plaintext.c" and so on).
+
+        k. Add a description of your implementation in "implementation.info" 
+file, in the "ImplementationDescription:" section.
+            Example:
+                ImplementationDescription: ASCON reference implementation
+
+        l. If you have common functions used by two or more of the following 
+operations (initialize, process associated data, process plaintext/ciphertext, 
+finalize, tag generation), you can add them in separate "*.c" and "*.h" files 
+according to the following rules. The same rules apply when you just want to 
+make the code cleaner by implementing some functions in separate files.
+
+            * Do not use the following names for the added "*.c" and/or "*.h" 
+files:
+                "main"
+                "cipher"
+                "common"
+                "test_vectors"
+                "initialize"
+                "process_associated_data"
+                "process_plaintext" 
+                "process_ciphertext"
+                "finalize"
+                "tag_generation"
+
+            * Do not add constant definition in "*.h" files, except for 
+macros. For constants either use "constants.c" and "constants.h" (See 3.b.), 
+either use your own "*.c" and "*.h" files, but declare the constants in "*.h" 
+files and define them in "*.c" files.
+
+            * Add the "*.c" name withouth the "." separator and extension in
+ "implementation.info" file, in the corresponding section(s) 
+("InitializationCode:", "ProcessAssociatedDataCode:", etc.). If a section 
+contains more than one file, use ", " as separator.
+
+            Example:
+                - if you add the following files:
+                    + "f.c" that contains common code parts for initialize and 
+finalize
+                    + "g.c" that contains common code parts for process 
+plaintext and ciphertext
+                    + "h.c" that contains a part of tag generation code
+
+                - the "implementation.info" file should contain:
+                    InitializationCode: f
+                    ProcessAssociatedDataCode:
+                    ProcessPlaintextCode: g
+                    FinalizationCode: f, h
+                    TagGenerationCode:
+                    ProcessCiphertextCode: g
+
+            * Add the "*.c" name withouth the "." separator and extension in 
+"implementation.info" file, in the corresponding section(s) 
+("ProcessPlaintextConstants:", "InitializeConstants:", etc.). If a section 
+contains more than one file, use "," as separator.
+
+            Example:
+                - if you add the following "*.c" constant files:
+                    + "f.c" that contains common constants for finalization 
+and initialization
+                    + "g.c" that contains common constants for intialization 
+and process_associated_data
+                    + "h.c" that contains constants for process_plaintext
+
+                - the "implementation.info" file should contain:
+                    InitializationConstants: f, g
+                    ProcessAssociatedDataConstants: g
+                    ProcessPlaintextConstants: h
+                    TagGenerationConstants:
+                    ProcssCiphertextConstants:
+                    FinalizationConstants: f
+                        
+            Note: Do not add constants definitions in files that contain cipher 
+implementation ("initialize.c","process_associated_data.c", 
+"process_plaintext.c" and so on).
+
+            * Mention whether your AEAD implementation processes associated 
+data, plaintext or ciphertext data when these data inputs are NULL. 
+                - If the implementation processes associated data even when 
+associated_data is NULL, specify it as follows in "implementation.info":
+                    ProcessEmptyAssociatedData: yes
+                - If the implementation does not process empty plaintext 
+specify in "implementation.info":
+                    ProcessEmptyMessage: no
+
+
+        m. Indicate the implementation language for all supported platforms in 
+"implementation.info" file.
+            Example:
+                ImplementationAVR: ASM
+                ImplementationMSP: C
+                ImplementationARM: ASM
+                ImplementationPC: 
+            Note: You don't have to set the implementation language to "C" 
+because this is the default value.
+
+        o. If you would like to skip the state value check after any function 
+among Initialization(), ProcessAssociatedData(), ProcessPlaintext(), 
+ProcessCiphertext(), Finalization() use following macros and set them to 
+SKIP_STATE_CHECK_TRUE or SKIP_STATE_CHECK_FALSE as required.
+            Example:
+                #define SKIP_STATE_CHECK_INI SKIP_STATE_CHECK_TRUE
+                #define SKIP_STATE_CHECK_PAD SKIP_STATE_CHECK_TRUE
+                #define SKIP_STATE_CHECK_PPD SKIP_STATE_CHECK_TRUE
+                #define SKIP_STATE_CHECK_FIN SKIP_STATE_CHECK_TRUE
+                #define SKIP_STATE_CHECK_PCD SKIP_STATE_CHECK_TRUE
+
+            Note: Above macros are set to SKIP_STATE_CHECK_FALSE by default so 
+you don't have to set them to FALSE if you want the state check functionality 
+enabled.
+
+    4. Fill the cipher implementation authors in "implementation.info"
+        Example:
+            ImplementationAuthors: Bruce Wayne
+
+
+
+Coding rules
+============
+
+1. Do not use the following data types: int, char, short, long and the 
+combinations of them. Instead use: int8_t, uint8_t, int16_t, uint16_t, int32_t, 
+uint32_t, int64_t and uint64_t data types which are declared in "<stdint.h>".
+
+2. Try to keep the code clean and easy to read.
+
+3. Use the "/* ... */" comment style, unless you comment a set of test vectors, 
+in which case is indicated to use "// ...".
+
+4. The framework is designed with several debug and test cases, so you should 
+not add "printf" or other function calls in your code, at least not in the final 
+version.
+
+
+
+Using the makefile
+==================
+
+The makefile can build the cipher in different scenarios and test cases, 
+either in debug or in release mode. To see a list of the makefile options, just 
+type "make" or "make help" in the cipher "source" directory. You can also type 
+"make -f ./../source/Makefile" or "make -f ./../source/Makefile help" from 
+either cipher "source" directory or cipher "build" directory. For simplicity we 
+assume that you call the makefile from the cipher "source" directory.
+
+
+Debug mode
+    Build  & test cipher in debug mode for PC
+        make clean
+        make cipher
+        make test-cipher
+
+    Build & test scenario 1 in debug mode for PC
+        make clean
+        make scenario1
+        make test-scenario1
+
+    Build & test scenario 2 in debug mode for PC
+        make clean
+        make scenario2
+        make test-scenario2
+
+    Build & test scenario 3 in debug mode for PC
+        make clean
+        make scenario3
+        make test-scenario3
+
+    Build & test scenario 4 in debug mode for PC
+        make clean
+        make scenario4
+        make test-scenario4
+
+
+Release mode
+    Build cipher in release mode for PC
+        make clean
+        make pc
+
+    Build cipher in release mode for AVR
+        make clean
+        make avr
+
+    Build cipher in release mode for MSP
+        make clean
+        make msp
+
+    Build cipher in release mode for ARM
+        make clean
+        make arm
+
+    Build scenario 1 in release mode for PC
+        make clean
+        make pc-scenario1
+
+    Build scenario 1 in release mode for AVR
+        make clean
+        make avr-scenario1
+
+    Build scenario 1 in release mode for MSP
+        make clean
+        make msp-scenario1
+
+    Build scenario 1 in release mode for ARM
+        make clean
+        make arm-scenario1
+
+    Build scenario 2 in release mode for PC
+        make clean
+        make pc-scenario2
+
+    Build scenario 2 in release mode for AVR
+        make clean
+        make avr-scenario2
+
+    Build scenario 2 in release mode for MSP
+        make clean
+        make msp-scenario2
+
+    Build scenario 2 in release mode for ARM
+        make clean
+        make arm-scenario2
+    Build scenario 3 in release mode for PC
+        make clean
+        make pc-scenario3
+
+    Build scenario 3 in release mode for AVR
+        make clean
+        make avr-scenario3
+
+    Build scenario 3 in release mode for MSP
+        make clean
+        make msp-scenario3
+
+    Build scenario  in release mode for ARM
+        make clean
+        make arm-scenario3
+
+    Build scenario 4 in release mode for PC
+        make clean
+        make pc-scenario4
+
+    Build scenario 4 in release mode for AVR
+        make clean
+        make avr-scenario4
+
+    Build scenario 4 in release mode for MSP
+        make clean
+        make msp-scenario4
+
+    Build scenario 4 in release mode for ARM
+        make clean
+        make arm-scenario4
+
+
+If your cipher builds without errors or warnings and the five tests 
+(test-cipher, test-scenario1, test-scenario2, test-scenario3 and test-scenario4)
+ run as expected, then the cipher implementation is correctly integrated into 
+the framework.
+
+Note: If you encounter warnings during the build, you should fix the code such 
+that they do not appear.
+
+
+
+Constraints
+===========
+1. The values defined in "constants.h" for "BLOCK_SIZE", "KEY_SIZE",
+"NONCE_SIZE", "STATE_SIZE" and "TAG_SIZE" must be in bytes.
+
+
+
+Getting the cipher metrics
+==========================
+
+1. Code Size
+From the cipher build directory type one of the following commands to see how to 
+use the cipher code size script:
+    ./../../../../scripts/cipher/cipher_code_size.sh -h
+    ./../../../../scripts/cipher/cipher_code_size.sh --help
+
+To get the code size in table format for a cipher for AVR in scenario 2 type:
+    ./../../../../scripts/cipher/cipher_code_size.sh -a=AVR -s=2
+
+To get the code size in raw format for a cipher for AVR in scenario 2 type:
+    ./../../../../scripts/cipher/cipher_code_size.sh -a=AVR -s=2 -m=1
+
+
+2. RAM
+From the cipher build directory type one of the following commands to see how to 
+use the cipher RAM script:
+    ./../../../../scripts/cipher/cipher_ram.sh -h 
+    ./../../../../scripts/cipher/cipher_ram.sh --help
+
+To get the RAM in table format for a cipher for AVR in scenario 2 type:
+    ./../../../../scripts/cipher/cipher_ram.sh -a=AVR -s=2
+
+To get the RAM in raw format for a cipher for AVR in scenario 2 type:
+    ./../../../../scripts/cipher/cipher_ram.sh -a=AVR -s=2 -m=1
+
+
+3. Execution Time
+From the cipher build directory type one of the following commands to see how to 
+use the cipher execution time script:
+    ./../../../../scripts/cipher/cipher_execution_time.sh -h 
+    ./../../../../scripts/cipher/cipher_execution_time.sh --help
+
+To get the execution time in table format for a cipher for AVR in scenario 2 
+type:
+    ./../../../../scripts/cipher/cipher_execution_time.sh -a=AVR -s=2
+
+To get the execution time in raw format for a cipher for AVR in scenario 2 type:
+    ./../../../../scripts/cipher/cipher_execution_time.sh -a=AVR -s=2 -m=1
+
+
+4. Collect all metrics
+To get help about how to collect all metrics for a list of ciphers on a list of 
+architectures in a list of scenarios use:
+    ./../../../../scripts/collect_ciphers_metrics.sh -h
+    ./../../../../scripts/collect_ciphers_metrics.sh -help
+
+To get all metrics for "ASCON_64_128_128_320_128_v01" and 
+"ACORN_1_128_128_293_128_v01" on "PC" and "ARM" in scenarios "1" and "2" in raw 
+format use:
+    ./../../../../scripts/collect_ciphers_metrics.sh -a='PC ARM' -s='1 2' 
+-c='ASCON_64_128_128_320_128_v01 ACORN_1_128_128_293_128_v01' -f=1

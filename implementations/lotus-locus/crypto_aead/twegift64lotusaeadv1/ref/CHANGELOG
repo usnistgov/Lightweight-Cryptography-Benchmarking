@@ -1,0 +1,2 @@
+[April 29, 2019]	Line 96 of encrypt.c:
+xor_bytes(nonced_key, nonce, CRYPTO_ABYTES);	===>>>	xor_bytes(nonced_key, nonce, CRYPTO_NPUBBYTES);

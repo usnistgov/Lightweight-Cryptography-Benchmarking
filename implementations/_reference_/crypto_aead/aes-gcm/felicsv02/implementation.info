@@ -1,0 +1,26 @@
+ImplementationDescription: AES-GCM 128-bits, IV 96 bits; store constants in RAM
+ImplementationAuthors: YLC, 3D
+
+InitializationConstants: sbox, rc_tab
+ProcessAssociatedDataConstants:
+ProcessPlaintextConstants: sbox
+FinalizationConstants:
+TagGenerationConstants: sbox
+ProcessCiphertextConstants: sbox
+
+InitializationCode: aes_encryption_key_schedule, aes_encrypt, aes_gmul_o
+ProcessAssociatedDataCode: hash, mul_h
+ProcessPlaintextCode: encrypt, aes_encrypt, aes_gmul_o, hash, mul_h
+FinalizationCode:
+TagGenerationCode: aes_encrypt, g_mul_o, mul_h
+ProcessCiphertextCode: encrypt, aes_encrypt, eas_gmul_o, hash, mul_h
+
+UseFinalization: no
+
+ProcessEmptyAssociatedData: yes
+ProcessEmptyMessage: yes
+
+ImplementationAVR: C
+ImplementationMSP: C
+ImplementationARM: C
+ImplementationPC: C

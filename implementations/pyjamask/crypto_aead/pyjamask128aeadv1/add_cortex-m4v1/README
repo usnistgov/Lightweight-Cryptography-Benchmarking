@@ -1,0 +1,5 @@
+README
+
+This directory contains the source code of a high-order masked implementation of the Pyjamask block cipher on ARM Cortex-M4. The code was tested on STM32F407 Disscovery Kit (https://www.st.com/en/evaluation-tools/stm32f4discovery.html). 
+
+The repository does not include a way to compile and test the code but we followed standard approach, such as the one of the PQM4 project (https://github.com/mupq/pqm4) to do our benchmarks.
