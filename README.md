@@ -1,4 +1,4 @@
-# Benchmarking of Lightweight Cryptograpic Algorithms on Microcontrollers
+# Benchmarking of Lightweight Cryptographic Algorithms on Microcontrollers
 
 This repository hosts the benchmarking framework used to evaluate the software performance of the candidates of the NIST Lightweight Cryptography Standardization Project on microcontrollers.
 
