@@ -178,9 +178,9 @@ function verify_kat() {
 					$PLATFORMIO run --verbose --target upload --environment $conf > $temp_folder/upload_out.txt 2> $temp_folder/upload_err.txt
 					stop_watch "launching" 3
 
-                    ./wait_eof_marker.sh $outfile &
+ 					./wait_eof_marker.sh $outfile &
 
-                    $PLATFORMIO device monitor 2> $temp_folder/serial_err.txt > $outfile
+ 					$PLATFORMIO device monitor 2> $temp_folder/serial_err.txt > $outfile
 
 					$PYTHON trim_genkat_output.py $outfile > $temp_folder/kat.txt
 
@@ -338,13 +338,11 @@ function measure_timing() {
 				else
 					stop_watch "uploading" 3
 					$PLATFORMIO run --verbose --target upload --environment $conf > $uploadout 2> $uploaderr
-					sleep 3s
-					$PLATFORMIO device monitor > $outfile&
-					PID=$!
+					stop_watch "launching" 3
 
-					wait_eof_marker
+					./wait_eof_marker.sh $outfile &
 
-					kill -9 $PID
+					$PLATFORMIO device monitor 2> $temp_folder/serial_err.txt > $outfile
 				fi
 
 			fi
