@@ -32,7 +32,7 @@
 #!/bin/bash
 
 # Target platform names
-platform_list=("mkrzero uno nano33ble nano_every nodemcuv2 chipkit_mx3")
+platform_list=("mkrzero uno f411re nano33ble nano_every nodemcuv2 chipkit_mx3")
 
 # List of experiments to be performed
 experiment_list=("size kat timing")
@@ -582,6 +582,8 @@ if [[ "$target" == "mkrzero" ]]; then
 	supported_impl="armv6m"
 elif [[ "$target" == "uno" ]]; then
 	supported_impl="avr"
+elif [[ "$target" == "f411re" ]]; then
+	supported_impl="armv6m armv7m"
 elif [[ "$target" == "nano33ble" ]]; then
 	supported_impl="armv6m armv7m"
 elif [[ "$target" == "nano_every" ]]; then
