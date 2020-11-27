@@ -338,7 +338,7 @@ static void DRYSPONGE_enc_core_aligned(
     DRYSPONGE_t *const ctx,
     const uint64_t *const ib//exactly one block of input
 ){
-    assert((((uintptr_t)ctx->obuf)%8) == 0);
+    assert((((uintptr_t)ctx->obuf)%ALIGN64) == 0);
     DRYSPONGE_xor64(ctx->r,ib,(uint64_t*const)ctx->obuf);
     DRYSPONGE_f(ctx,(uint8_t *)ib);
     ctx->obuf+=DRYSPONGE_BLOCKSIZE;
