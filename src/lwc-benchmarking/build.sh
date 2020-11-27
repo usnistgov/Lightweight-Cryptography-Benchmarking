@@ -123,22 +123,6 @@ function stop_watch() {
 	done
 }
 
-function wait_eof_marker() {
-
-	# Check output file periodically until the end of file marker is found or an exception is generated
-	count=0
-	while [ $count -eq 0 ]
-	do
-		sleep 10s
-		count=$(grep -c "$eof_marker" $outfile)
-
-		# nodemcuv2 can generate exceptions
-		except=$(grep -c "CUT HERE FOR EXCEPTION DECODER" $outfile)
-
-		count=$(($count + $except))
-	done
-}
-
 #
 # KAT verification
 #
@@ -192,13 +176,11 @@ function verify_kat() {
 
 					stop_watch "uploading" 3
 					$PLATFORMIO run --verbose --target upload --environment $conf > $temp_folder/upload_out.txt 2> $temp_folder/upload_err.txt
-					sleep 3s
-					$PLATFORMIO device monitor > $outfile& 2> $temp_folder/serial_err.txt
-					PID=$!
+					stop_watch "launching" 3
 
-					wait_eof_marker
+                    ./wait_eof_marker.sh $outfile &
 
-					kill -9 $PID
+                    $PLATFORMIO device monitor 2> $temp_folder/serial_err.txt > $outfile
 
 					$PYTHON trim_genkat_output.py $outfile > $temp_folder/kat.txt
 
