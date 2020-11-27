@@ -59,6 +59,10 @@ if [ "" == "$PLATFORMIO" ]; then
     echo "Using '$PLATFORMIO' as PLATFORMIO. If you don't like that, define PLATFORMIO env var."
 fi
 
+./os_is_linux
+export OS_IS_LINUX=$?
+echo "OS_IS_LINUX='$OS_IS_LINUX'"
+
 #
 # Folders
 #
@@ -123,6 +127,28 @@ function stop_watch() {
 	done
 }
 
+function wait_eof_marker() {
+    echo "wait_eof_marker $outfile"
+	# Check output file periodically until the end of file marker is found or an exception is generated
+    count=0
+	while [ $count -eq 0 ]
+	do
+		sleep 3s
+		count=$(grep -c "$eof_marker" $outfile)
+
+		# nodemcuv2 can generate exceptions
+		except=$(grep -c "CUT HERE FOR EXCEPTION DECODER" $outfile)
+
+		count=$(($count + $except))
+
+		tvcount=$(grep -c "Count" $outfile)
+		printf "\r process running, test vectors done so far: $tvcount"
+
+	done
+    printf "\n"
+    echo "wait_eof_marker exit"
+}
+
 #
 # KAT verification
 #
@@ -178,9 +204,18 @@ function verify_kat() {
 					$PLATFORMIO run --verbose --target upload --environment $conf > $temp_folder/upload_out.txt 2> $temp_folder/upload_err.txt
 					stop_watch "launching" 3
 
- 					./wait_eof_marker.sh $outfile &
-
- 					$PLATFORMIO device monitor 2> $temp_folder/serial_err.txt > $outfile
+ 					if [ $OS_IS_LINUX -ne 0 ]
+ 					then
+ 					 	#on Linux, we cannot get platformio in background AND redirect its output. We get "Error: (25, ‘Inappropriate ioctl for device’)"
+ 						./wait_eof_marker.sh $outfile &
+ 						$PLATFORMIO device monitor 2> $temp_folder/serial_err.txt > $outfile
+ 					else
+ 						#on Windows, pgrep may not be available, so we stick to putting platformio in background
+ 						$PLATFORMIO device monitor > $outfile& 2> $temp_folder/serial_err.txt
+ 						PID=$!
+ 						wait_eof_marker
+ 						kill -9 $PID
+ 					fi
 
 					$PYTHON trim_genkat_output.py $outfile > $temp_folder/kat.txt
 
@@ -340,9 +375,18 @@ function measure_timing() {
 					$PLATFORMIO run --verbose --target upload --environment $conf > $uploadout 2> $uploaderr
 					stop_watch "launching" 3
 
-					./wait_eof_marker.sh $outfile &
-
-					$PLATFORMIO device monitor 2> $temp_folder/serial_err.txt > $outfile
+ 					if [ $OS_IS_LINUX -ne 0 ]
+ 					then
+ 					 	#on Linux, we cannot get platformio in background AND redirect its output. We get "Error: (25, ‘Inappropriate ioctl for device’)"
+ 						./wait_eof_marker.sh $outfile &
+ 						$PLATFORMIO device monitor 2> $temp_folder/serial_err.txt > $outfile
+ 					else
+ 						#on Windows, pgrep may not be available, so we stick to putting platformio in background
+ 						$PLATFORMIO device monitor > $outfile& 2> $temp_folder/serial_err.txt
+ 						PID=$!
+ 						wait_eof_marker
+ 						kill -9 $PID
+ 					fi
 				fi
 
 			fi

@@ -26,7 +26,8 @@ function wait_eof_marker() {
                 PID=$PIDSET
                 echo "Found process PID=$PID"
             else
-                echo "Process not found yet"
+                echo "Process not found"
+                exit 1
             fi
         else
             if [ -n "$PID" -a -e /proc/$PID ]; then
