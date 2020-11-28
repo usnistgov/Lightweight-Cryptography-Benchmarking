@@ -21,7 +21,7 @@ int crypto_aead_encrypt(
     (void) nsec; //avoid warning
     (void) DRYSPONGE_hash; //avoid warning
     size_t impl_clen;
-    DRYSPONGE_enc(k,DRYSPONGE_KEYSIZE,npub,m,mlen,ad,adlen,c,&impl_clen);
+    DRYSPONGE_enc(k,CRYPTO_KEYBYTES,npub,m,mlen,ad,adlen,c,&impl_clen);
     *clen = impl_clen;
     return 0;
 }
@@ -44,7 +44,7 @@ int crypto_aead_decrypt(
     const unsigned char *k
 ){
     (void) nsec; //avoid warning
-    if(DRYSPONGE_PASS!=DRYSPONGE_dec(k,DRYSPONGE_KEYSIZE,npub,c,clen,ad,adlen,m))
+    if(DRYSPONGE_PASS!=DRYSPONGE_dec(k,CRYPTO_KEYBYTES,npub,c,clen,ad,adlen,m))
         return -1;
     *mlen = clen - DRYSPONGE_TAGSIZE;
     return 0;
