@@ -20,6 +20,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 #include "drygascon128k32.h"
+#include "drygascon128core.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -70,29 +71,34 @@
 #define DRYSPONGE128_INIT_ROUNDS 11
 
 /**
+ * \brief Number of rounds for DrySPONGE256 during initialization.
+ */
+#define DRYSPONGE256_INIT_ROUNDS 12
+
+/**
  * \brief DrySPONGE128 domain bit for a padded block.
  */
-#define DRYDOMAIN128_PADDED (1 << 8)
+#define DRYDOMAIN128_PADDED (1 << 0)
 
 /**
  * \brief DrySPONGE128 domain bit for a final block.
  */
-#define DRYDOMAIN128_FINAL (1 << 9)
+#define DRYDOMAIN128_FINAL (1 << 1)
 
 /**
  * \brief DrySPONGE128 domain value for processing the nonce.
  */
-#define DRYDOMAIN128_NONCE (1 << 10)
+#define DRYDOMAIN128_NONCE (1 << 2)
 
 /**
  * \brief DrySPONGE128 domain value for processing the associated data.
  */
-#define DRYDOMAIN128_ASSOC_DATA (2 << 10)
+#define DRYDOMAIN128_ASSOC_DATA (2 << 2)
 
 /**
  * \brief DrySPONGE128 domain value for processing the message.
  */
-#define DRYDOMAIN128_MESSAGE (3 << 10)
+#define DRYDOMAIN128_MESSAGE (3 << 2)
 
 /**
  * \brief Internal state of the GASCON-128 permutation.
@@ -139,8 +145,6 @@ typedef struct
     drysponge128_x_t x;         /**< "x" value for the sponge */
 } __attribute__((aligned(16))) drysponge128_state_t;
 
-#include "drygascon128core.h"
-
 // XOR two source byte buffers and put the result in a destination buffer
 #define lw_xor_block_2_src(dest, src1, src2, len) \
     do { \
@@ -154,7 +158,11 @@ typedef struct
         } \
     } while (0)
 
-#define drysponge128_g(state) DRYGASCON_G_OPT(state,(state)->rounds)
+void DRYGASCON_G_OPT(uint64_t* state, uint32_t rounds);
+
+#define drysponge128_g(state) DRYGASCON_G_OPT((uint64_t*)(state),(state)->rounds)
+
+void DRYGASCON_F_OPT(drysponge128_state_t *state, const unsigned char *input,unsigned int ds, unsigned int rounds);
 
 #ifdef DRYGASCON_DEBUG
     #define DRYGASCON_PRINT_F_ENTRY(state,input) do{\
