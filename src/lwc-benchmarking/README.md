@@ -39,7 +39,7 @@ The build script that is explained in the next section creates a new `lwc_mode.h
 
 ## Building with the script `build.sh`
 
-The bash script `build.sh` processes the implementations by building them within the framework and depending on the experiment being done it uploads the program to the target device and captures the program output. At a minimum, the script must be provided a target platform name, which can be one of the platforms defined in the `platformio.ini` file. Currently, the valid platform names are `{mkrzero, uno, nano33ble, nano_every}`.
+The bash script `build.sh` processes the implementations by building them within the framework and depending on the experiment being done it uploads the program to the target device and captures the program output. At a minimum, the script must be provided a target platform name, which can be one of the platforms defined in the `platformio.ini` file. Currently, the valid platform names are `{mkrzero, uno, f411re, nano33ble, nano_every}`.
 
 By default, the script processes all implementations and does all the experiments. However, the behaviour can be changed by providing command line arguments, for instance to process only one or more *submissions*, or *variants*, as well as performing select experiments. Running the script with no arguments gives an explanation of the set of available command line arguments. Some examples:
 
