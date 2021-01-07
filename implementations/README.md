@@ -1,5 +1,6 @@
 This folder contains the implementations of Round 2 candidates collected from the submission packages and following repositories:
 
+ - https://github.com/nerilex/arm-crypto-lib
  - https://github.com/aadomn/skinny
  - https://github.com/ArneDeprez1/ForkAE-SW
  - https://github.com/ascon/ascon-c
@@ -10,9 +11,8 @@ This folder contains the implementations of Round 2 candidates collected from th
  - https://lab.las3.de/gitlab/lwc/candidates
  - https://github.com/rweather/lightweight-crypto
 	
- 
 
-The implementations have been updated on: **5 October 2020**.
+The implementations have been updated on: **2 December 2020**.
 
 ## Directory structure
 

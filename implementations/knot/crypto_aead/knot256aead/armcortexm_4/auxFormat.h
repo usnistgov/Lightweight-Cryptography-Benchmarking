@@ -1,6 +1,8 @@
 #include"crypto_aead.h"
 #include"api.h"
 #include  <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #define U32BIG(x) (x)
 
 #define ARR_SIZE(a) (sizeof((a))/sizeof((a[0])))
@@ -14,24 +16,31 @@
 typedef unsigned char u8;
 typedef unsigned int u32;
 typedef unsigned long long u64;
-void printU8(char name[], u8 var[], long len, int offset);
 
-//new
-void puckU8FormatToFourPacket(u8 in, u8 *out);
+#define puckU32ToFour(lo){\
+u32 r0;\
+r0 = (lo ^ (lo << 2)) & 0x30303030, lo ^= r0 ^ (r0 >> 2);\
+r0 = (lo ^ (lo << 1)) & 0x44444444, lo ^= r0 ^ (r0 >> 1);\
+r0 = (lo ^ (lo << 4)) & 0x0f000f00, lo ^= r0 ^ (r0 >> 4);\
+r0 = (lo ^ (lo << 2)) & 0x30303030, lo ^= r0 ^ (r0 >> 2);\
+r0 = (lo ^ (lo << 8)) & 0x00ff0000, lo ^= r0 ^ (r0 >> 8);\
+r0 = (lo ^ (lo << 4)) & 0x0f000f00, lo ^= r0 ^ (r0 >> 4);\
+}
+#define unpuckU32ToFour(lo){\
+u32 r0;\
+r0 = (lo ^ (lo << 4)) & 0x0f000f00, lo ^= r0 ^ (r0 >> 4);\
+r0 = (lo ^ (lo << 8)) & 0x00ff0000, lo ^= r0 ^ (r0 >> 8);\
+r0 = (lo ^ (lo << 2)) & 0x30303030, lo ^= r0 ^ (r0 >> 2);\
+r0 = (lo ^ (lo << 4)) & 0x0f000f00, lo ^= r0 ^ (r0 >> 4);\
+r0 = (lo ^ (lo << 1)) & 0x44444444, lo ^= r0 ^ (r0 >> 1);\
+r0 = (lo ^ (lo << 2)) & 0x30303030, lo ^= r0 ^ (r0 >> 2);\
+}
+void unpackU128FormatToFourPacket(u8 * out, u32 * in) ;
 
-#define puck32(in)\
-{\
-temp1 = (in ^ (in >> 1)) & 0x22222222; in ^= temp1 ^ (temp1 << 1);\
-temp1 = (in ^ (in >> 2)) & 0x0C0C0C0C; in ^= temp1 ^ (temp1 << 2);\
-temp1 = (in ^ (in >> 4)) & 0x00F000F0; in ^= temp1 ^ (temp1 << 4);\
-temp1 = (in ^ (in >> 8)) & 0x0000FF00; in ^= temp1 ^ (temp1 << 8);\
-}
-#define unpuck32(t0){\
-	r0 = (t0 ^ (t0 >> 8)) & 0x0000FF00, t0 ^= r0 ^ (r0 << 8); \
-	r0 = (t0 ^ (t0 >> 4)) & 0x00F000F0, t0 ^= r0 ^ (r0 << 4); \
-	r0 = (t0 ^ (t0 >> 2)) & 0x0C0C0C0C, t0 ^= r0 ^ (r0 << 2); \
-	r0 = (t0 ^ (t0 >> 1)) & 0x22222222, t0 ^= r0 ^ (r0 << 1); \
-}
+void packU128FormatToFourPacket(u32 * out, u8 * in) ;
+
+void P512(unsigned int *s, unsigned char *round, unsigned char rounds);
+
 
 #define BIT_LOTR32_16(t0,t1,t2,t3,t4,t5,t6,t7){\
 t4= LOTR32(t0, 4);\

@@ -10,25 +10,32 @@ typedef unsigned char u8;
 typedef unsigned int u32;
 typedef unsigned long long u64;
 
-//new
-void puckU8FormatToFourPacket(u8 in, u8 *out);
+void unpackU128FormatToFourPacket(u8 * out, u32 * in) ;
 
-#define puck32(in)\
-{\
-temp1 = (in ^ (in >> 1)) & 0x22222222; in ^= temp1 ^ (temp1 << 1);\
-temp1 = (in ^ (in >> 2)) & 0x0C0C0C0C; in ^= temp1 ^ (temp1 << 2);\
-temp1 = (in ^ (in >> 4)) & 0x00F000F0; in ^= temp1 ^ (temp1 << 4);\
-temp1 = (in ^ (in >> 8)) & 0x0000FF00; in ^= temp1 ^ (temp1 << 8);\
-}
-#define unpuck32(t0){\
-	r0 = (t0 ^ (t0 >> 8)) & 0x0000FF00, t0 ^= r0 ^ (r0 << 8); \
-	r0 = (t0 ^ (t0 >> 4)) & 0x00F000F0, t0 ^= r0 ^ (r0 << 4); \
-	r0 = (t0 ^ (t0 >> 2)) & 0x0C0C0C0C, t0 ^= r0 ^ (r0 << 2); \
-	r0 = (t0 ^ (t0 >> 1)) & 0x22222222, t0 ^= r0 ^ (r0 << 1); \
-}
+void packU128FormatToFourPacket(u32 * out, u8 * in) ;
+
+void P512(unsigned int *s, unsigned char *round, unsigned char rounds);
 
 unsigned char constant7Format_aead[100];
 
+#define puckU32ToFour(lo){\
+u32 r0;\
+r0 = (lo ^ (lo << 2)) & 0x30303030, lo ^= r0 ^ (r0 >> 2);\
+r0 = (lo ^ (lo << 1)) & 0x44444444, lo ^= r0 ^ (r0 >> 1);\
+r0 = (lo ^ (lo << 4)) & 0x0f000f00, lo ^= r0 ^ (r0 >> 4);\
+r0 = (lo ^ (lo << 2)) & 0x30303030, lo ^= r0 ^ (r0 >> 2);\
+r0 = (lo ^ (lo << 8)) & 0x00ff0000, lo ^= r0 ^ (r0 >> 8);\
+r0 = (lo ^ (lo << 4)) & 0x0f000f00, lo ^= r0 ^ (r0 >> 4);\
+}
+#define unpuckU32ToFour(lo){\
+u32 r0;\
+r0 = (lo ^ (lo << 4)) & 0x0f000f00, lo ^= r0 ^ (r0 >> 4);\
+r0 = (lo ^ (lo << 8)) & 0x00ff0000, lo ^= r0 ^ (r0 >> 8);\
+r0 = (lo ^ (lo << 2)) & 0x30303030, lo ^= r0 ^ (r0 >> 2);\
+r0 = (lo ^ (lo << 4)) & 0x0f000f00, lo ^= r0 ^ (r0 >> 4);\
+r0 = (lo ^ (lo << 1)) & 0x44444444, lo ^= r0 ^ (r0 >> 1);\
+r0 = (lo ^ (lo << 2)) & 0x30303030, lo ^= r0 ^ (r0 >> 2);\
+}
 //t1
 #define P512_ARC_1(rci) \
   do { \
@@ -49,8 +56,8 @@ unsigned char constant7Format_aead[100];
 }while (0)
 //t1 t2
 #define P512_2SC(S1,S2,S3,S4,S5,S6,S7,S8) \
-  do { \
-    __asm__ __volatile__ ( \
+do { \
+__asm__ __volatile__ ( \
             "/*sbox   column*/         \n\t"\
    	        "mvns    %[S_0],     %[S_0]            \n\t"\
    	        "ands    %[t1],      %[S_2], %[S_0]        \n\t"\
@@ -71,14 +78,14 @@ unsigned char constant7Format_aead[100];
    	        "orrs    %[S_5],     %[S_3], %[S_5]        \n\t"\
    	        "eors    %[S_1],     %[S_7], %[S_1]        \n\t"\
    	        "eors    %[S_5],     %[S_5], %[S_1]        \n\t"\
-   	        "eors    %[t4],      %[S_3], %[S_7]        \n\t"\
+   	        "eors    %[t2],      %[S_3], %[S_7]        \n\t"\
    	        "eors    %[S_7],     %[S_7], %[t3]        \n\t"\
    	        "ands    %[S_1],     %[t3] , %[S_1]        \n\t"\
-   	        "eors    %[S_1],     %[t4] , %[S_1]        \n\t"\
-   	        "ands    %[S_3],     %[S_5], %[t4]       \n\t"\
+   	        "eors    %[S_1],     %[t2] , %[S_1]        \n\t"\
+   	        "ands    %[S_3],     %[S_5], %[t2]       \n\t"\
    	        "eors    %[S_3],     %[t3] , %[S_3]        \n\t"\
     : /* output variables - including inputs that are changed */\
-		[t1] "=r" (t1), [t2] "=r" (t2), [t3] "=r" (t3), [t4] "=r" (t9),\
+		[t1] "=r" (t1), [t2] "=r" (t2), [t3] "=r" (t3),\
 		[S_0] "+r" (S1), [S_2] "+r" (S2), [S_4] "+r" (S3), [S_6] "+r" (S4) ,\
 		[S_1] "+r" (S5), [S_3] "+r" (S6), [S_5] "+r" (S7), [S_7] "+r" (S8)\
 		: : );\

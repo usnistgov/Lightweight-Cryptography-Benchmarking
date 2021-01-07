@@ -9,7 +9,7 @@ aead_ctx lwc_aead_cipher = {
 	CRYPTO_KEYBYTES,
 	CRYPTO_NPUBBYTES,
 	CRYPTO_ABYTES,
-	drygascon128_aead_encrypt,
-	drygascon128_aead_decrypt
+	drygascon128k16_aead_encrypt,
+	drygascon128k16_aead_decrypt
 };
 

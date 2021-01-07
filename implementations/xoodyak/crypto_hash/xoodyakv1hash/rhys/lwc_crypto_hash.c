@@ -4,7 +4,7 @@
 
 hash_ctx lwc_hash_ctx = {
 	"xoodyakv1hash",
-	"ryhs",
+	"rhys",
 	CRYPTO_BYTES,
 	xoodyak_hash,
 };

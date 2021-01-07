@@ -1,96 +1,57 @@
 #include"auxFormat.h"
-
-
-//puck begin//
+void packU96FormatToThreePacket(u32 * out, u8 * in) {
+	u32 temp0[3] = { 0 };
+	u32 temp1[3] = { 0 };
+	u32 temp2[3] = { 0 };
+	u32 t1=U32BIG(((u32*)in)[0]);
+	temp0[0] = t1; temp0[1] = t1 >> 1; temp0[2] = t1>> 2;
+	puckU32ToThree_1(temp0[0]);
+	puckU32ToThree_1(temp0[1]);
+	puckU32ToThree_1(temp0[2]);
+	t1=U32BIG(((u32*)in)[1]);
+	temp1[0] = t1; temp1[1] = t1>>1; temp1[2] = t1 >> 2;
+	puckU32ToThree_1(temp1[0]);
+	puckU32ToThree_1(temp1[1]);
+	puckU32ToThree_1(temp1[2]);
+	t1=U32BIG(((u32*)in)[2]);
+	temp2[0] = t1; temp2[1] =t1 >> 1; temp2[2] = t1>> 2;
+	puckU32ToThree_1(temp2[0]);
+	puckU32ToThree_1(temp2[1]);
+	puckU32ToThree_1(temp2[2]);
+	out[0] = (temp2[1]<<21)	|(temp1[0]<<10)	|temp0[2];
+	out[1] = (temp2[0] << 21) | (temp1[2] << 11) | temp0[1];
+	out[2] = (temp2[2] << 22) | (temp1[1] << 11) | temp0[0];
+}
 void unpackU96FormatToThreePacket(u8 * out, u32 * in) {
 	u32 temp0[3] = { 0 };
 	u32 temp1[3] = { 0 };
 	u32 temp2[3] = { 0 };
-	u32 t1_32, t2_64, t2_65;
 	u32 t[3] = { 0 };
-	temp0[0] = in[0] & 0xffe00000;
-	temp1[0] = (in[0] & 0x001ffc00) << 11;
-	temp2[0] = (in[0] & 0x000003ff) << 22;
-	temp0[1] = in[1] & 0xffe00000;
-	temp1[1] = (in[1] & 0x001ff800) << 11;
-	t2_64 = ((in[1] & 0x00000400) << 21);
-	temp2[1] = (in[1] & 0x000003ff) << 22;
-	temp0[2] = in[2] & 0xffc00000;
-	t1_32 = ((in[2] & 0x00200000) << 10);
-	temp1[2] = (in[2] & 0x001ff800) << 11;
-	t2_65 = ((in[2] & 0x00000400) << 20);
-	temp2[2] = (in[2] & 0x000003ff) << 22;
-	unpuckU32ToThree(temp0[0]);
-	unpuckU32ToThree(temp0[1]);
-	unpuckU32ToThree(temp0[2]);
-	t[2] = temp0[0] | temp0[1] >> 1 | temp0[2] >> 2;
-	unpuckU32ToThree(temp1[0]);
-	unpuckU32ToThree(temp1[1]);
-	unpuckU32ToThree(temp1[2]);
-	t[1] = t1_32 | ((temp1[0] | temp1[1] >> 1 | temp1[2] >> 2) >> 1);
-	unpuckU32ToThree(temp2[0]);
-	unpuckU32ToThree(temp2[1]);
-	unpuckU32ToThree(temp2[2]);
-	t[0] = t2_65 | t2_64 | ((temp2[0] | temp2[1] >> 1 | temp2[2] >> 2) >> 2);
+	u32 t0=in[0] ;
+	u32 t1=in[1] ;
+	u32 t2=in[2] ;
+	temp0[0] = t2 & 0x7ff;
+	temp0[1] = t1 & 0x7ff;
+	temp0[2] = t0 & 0x3ff;
+	temp1[0] = (t0>>10) & 0x7ff;
+	temp1[1] = (t2 >>11 ) & 0x7ff;
+	temp1[2] = (t1 >> 11) & 0x3ff;
+	temp2[0] = t1 >> 21;
+	temp2[1] = t0 >> 21;
+	temp2[2] = t2 >> 22;
+	unpuckU32ToThree_1(temp0[0]);
+	unpuckU32ToThree_1(temp0[1]);
+	unpuckU32ToThree_1(temp0[2]);
+	t[0] = temp0[0] | temp0[1] << 1 | temp0[2] << 2;
+	unpuckU32ToThree_1(temp1[0]);
+	unpuckU32ToThree_1(temp1[1]);
+	unpuckU32ToThree_1(temp1[2]);
+	t[1] = temp1[0] | temp1[1] << 1 | temp1[2] << 2;
+	unpuckU32ToThree_1(temp2[0]);
+	unpuckU32ToThree_1(temp2[1]);
+	unpuckU32ToThree_1(temp2[2]);
+	t[2] = temp2[0] | temp2[1] << 1 | temp2[2] << 2;
 	memcpy(out, t, 12 * sizeof(unsigned char));
-}
-void packU96FormatToThreePacket(u32 * out, u8 * in) {
-	u32 t0 = U32BIG(((u32*)in)[2]);
-	u32 t1 = U32BIG(((u32*)in)[1]);
-	u32 t2 = U32BIG(((u32*)in)[0]);
-	u32 temp0[3] = { 0 };
-	u32 temp1[3] = { 0 };
-	u32 temp2[3] = { 0 };
-	u8 t1_32 = (in[7] & 0x80) >> 7, t2_64 = (in[3] & 0x80) >> 7, t2_65 = (in[3] & 0x40) >> 6;
-	t1 = t1 << 1;
-	t2 = t2 << 2;
-	temp0[0] = t0; temp0[1] = t0 << 1; temp0[2] = t0 << 2;
-	puckU32ToThree(temp0[0]);
-	puckU32ToThree(temp0[1]);
-	puckU32ToThree(temp0[2]);
-	temp1[0] = t1; temp1[1] = t1 << 1; temp1[2] = t1 << 2;
-	puckU32ToThree(temp1[0]);
-	puckU32ToThree(temp1[1]);
-	puckU32ToThree(temp1[2]);
-	temp2[0] = t2; temp2[1] = t2 << 1; temp2[2] = t2 << 2;
-	puckU32ToThree(temp2[0]);
-	puckU32ToThree(temp2[1]);
-	puckU32ToThree(temp2[2]);
-	out[0] = (temp0[0]) | (temp1[0] >> 11) | (temp2[0] >> 22);
-	out[1] = (temp0[1]) | (temp1[1] >> 11) | (((u32)t2_64) << 10) | (temp2[1] >> 22);
-	out[2] = (temp0[2]) | (((u32)t1_32) << 21) | (temp1[2] >> 11) | (((u32)t2_65) << 10) | (temp2[2] >> 22);
-}
-
-void packU32FormatToThreePacket(u32 * out, u8 * in) {
-	u32 t2 = U32BIG(((u32*)in)[0]);
-	u32 temp2[3] = { 0 };
-	u8  t2_64 = (in[3] & 0x80) >> 7, t2_65 = (in[3] & 0x40) >> 6;
-	t2 = t2 << 2;
-	temp2[0] = t2; temp2[1] = t2 << 1; temp2[2] = t2 << 2;
-	puckU32ToThree(temp2[0]);
-	puckU32ToThree(temp2[1]);
-	puckU32ToThree(temp2[2]);
-	out[0] = (temp2[0] >> 22);
-	out[1] = (((u32)t2_64) << 10) | (temp2[1] >> 22);
-	out[2] =(((u32)t2_65) << 10) | (temp2[2] >> 22);
-}
-void unpackU32FormatToThreePacket(u8 * out, u32 * in) {
-	u32 temp2[3] = { 0 };
-	u32 t2_64, t2_65;
-	u32 t2;
-	temp2[0] = (in[0] & 0x000003ff) << 22;
-
-	t2_64 = ((in[1] & 0x00000400) << 21);
-	temp2[1] = (in[1] & 0x000003ff) << 22;
-
-	t2_65 = ((in[2] & 0x00000400) << 20);
-	temp2[2] = (in[2] & 0x000003ff) << 22;
-
-	unpuckU32ToThree(temp2[0]);
-	unpuckU32ToThree(temp2[1]);
-	unpuckU32ToThree(temp2[2]);
-	t2 = t2_65 | t2_64 | ((temp2[0] | temp2[1] >> 1 | temp2[2] >> 2) >> 2);
-	*(u32*)(out) = U32BIG(t2);
 }
 void P384(unsigned int *s, unsigned char *round, unsigned char lunNum) {
 	u32 s_temp[12] = { 0 };

@@ -4,7 +4,7 @@
 
 
 aead_ctx lwc_aead_cipher = {
-	"skinnyaeadtk29664v1",
+	"skinnyaeadtk39664v1",
 	"rhys",
 	CRYPTO_KEYBYTES,
 	CRYPTO_NPUBBYTES,

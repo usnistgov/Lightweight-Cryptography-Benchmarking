@@ -4,7 +4,7 @@
 
 hash_ctx lwc_hash_ctx = {
 	"saturninhashv2",
-	"ryhs",
+	"rhys",
 	CRYPTO_BYTES,
 	saturnin_hash,
 };

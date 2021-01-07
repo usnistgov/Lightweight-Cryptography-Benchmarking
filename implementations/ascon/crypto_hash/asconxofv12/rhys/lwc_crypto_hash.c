@@ -4,7 +4,7 @@
 
 hash_ctx lwc_hash_ctx = {
 	"asconxofv12",
-	"ryhs",
+	"rhys",
 	CRYPTO_BYTES,
 	ascon_xof,
 };

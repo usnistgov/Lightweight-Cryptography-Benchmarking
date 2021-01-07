@@ -4,7 +4,7 @@
 
 hash_ctx lwc_hash_ctx = {
 	"knot256v1hash",
-	"ryhs",
+	"rhys",
 	CRYPTO_BYTES,
 	knot_hash_256_256,
 };

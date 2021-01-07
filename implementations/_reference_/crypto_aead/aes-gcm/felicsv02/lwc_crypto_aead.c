@@ -2,6 +2,7 @@
 #include "api.h"
 #include "cipher.h"
 #include "constants.h"
+#include <string.h>
 
 int crypto_aead_encrypt(unsigned char* c, unsigned long long* clen,
 	const unsigned char* m, unsigned long long mlen,
@@ -13,8 +14,7 @@ int crypto_aead_encrypt(unsigned char* c, unsigned long long* clen,
     RAM_DATA_BYTE state[STATE_SIZE] = { 0 };
 
 	// copy message to ciphertext buffer for inplace encryption
-	for(int i = 0; i < mlen; i++)
-		c[i] = m[i];
+	memcpy(c, m, mlen);
 
     Initialize(state, k, npub);
     ProcessAssociatedData(state, ad, adlen);
@@ -37,8 +37,7 @@ int crypto_aead_decrypt(unsigned char* m, unsigned long long* mlen,
     RAM_DATA_BYTE tag[TAG_SIZE] = { 0 };
 
 	// copy ciphertext to message buffer for inplace decryption
-	for(int i = 0; i < clen; i++)
-		m[i] = c[i];
+	memcpy(m, c, clen - CRYPTO_ABYTES);
 
     Initialize(state, k, npub);
     ProcessAssociatedData(state, ad, adlen);

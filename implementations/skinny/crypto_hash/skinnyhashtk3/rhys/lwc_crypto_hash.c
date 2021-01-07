@@ -4,7 +4,7 @@
 
 hash_ctx lwc_hash_ctx = {
 	"skinnyhashtk3",
-	"ryhs",
+	"rhys",
 	CRYPTO_BYTES,
 	skinny_tk3_hash,
 };

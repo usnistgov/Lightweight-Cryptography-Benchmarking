@@ -4,7 +4,7 @@
 
 hash_ctx lwc_hash_ctx = {
 	"subterraneanv1hash",
-	"ryhs",
+	"rhys",
 	CRYPTO_BYTES,
 	subterranean_hash,
 };

@@ -1,9 +1,20 @@
 #include"auxFormat.h"
 
 #define aead_RATE (96 / 8)
+
 #define PR0_ROUNDS 76
 #define PR_ROUNDS 40
 #define PRF_ROUNDS 44
+/*
+
+#define PR0_ROUNDS 76
+#define PR_ROUNDS 56
+#define PRF_ROUNDS 60
+
+#define PR0_ROUNDS 76
+#define PR_ROUNDS 40
+#define PRF_ROUNDS 44
+ * */
 void Initialize(u32 *s, const unsigned char *npub, const unsigned char *k) {
 	packU96FormatToThreePacket(s, npub);
 	packU96FormatToThreePacket(s + 3, npub + 12);
@@ -68,10 +79,12 @@ void ProcessPlaintext(u32 *s, const u8* m, unsigned long long mlen, unsigned cha
 }
 
 void Finalize_GenerateTag(u32 *s, unsigned char *c) {
+	u8 tempU8[32] = { 0 };
 	P384(s, constant7Format, PRF_ROUNDS);
 	// return tag
-	unpackU96FormatToThreePacket(c, s);
-	unpackU96FormatToThreePacket(c + 12, s + 3);
+	unpackU96FormatToThreePacket(tempU8, s);
+	unpackU96FormatToThreePacket((tempU8 + 12), (s + 3));
+	memcpy(c, tempU8, CRYPTO_ABYTES * sizeof(unsigned char));
 
 }
 int Finalize_VerifyTag(u32 *s, const unsigned char *c, unsigned char *m, unsigned long long *mlen) {
@@ -91,7 +104,7 @@ void ProcessCiphertext(u32 *s, unsigned char *m, const unsigned char *c, unsigne
 {
 	u32 dataFormat[6] = { 0 };
 	u32 dataFormat_1[3] = { 0 };
-	u8 i,tempU8[48] = { 0 };
+	u8 tempData[48] = { 0 },tempU8[48] = { 0 };
 	if (clen) {
 		while (clen >= aead_RATE) {
 			packU96FormatToThreePacket(dataFormat, c);
@@ -108,12 +121,15 @@ void ProcessCiphertext(u32 *s, unsigned char *m, const unsigned char *c, unsigne
 			c += aead_RATE;
 		}
 		unpackU96FormatToThreePacket(tempU8, s);
-		for (i = 0; i < clen; ++i, ++m, ++c)
-		{
-			*m = tempU8[i] ^ *c;
-			tempU8[i] = *c;
-		}
-		tempU8[i] ^= 0x01;
+		  memset(tempData, 0, sizeof(tempData));
+		  memcpy(tempData, c, clen * sizeof(unsigned char));
+		  tempData[clen] = 0x01;
+		  U32BIG(((u32*)tempU8)[0]) ^= U32BIG(((u32* )tempData)[0]);
+		  U32BIG(((u32*)tempU8)[1]) ^= U32BIG(((u32* )tempData)[1]);
+		  U32BIG(((u32*)tempU8)[2]) ^= U32BIG(((u32* )tempData)[2]);
+		  memcpy(m, tempU8, clen * sizeof(unsigned char));
+		  memcpy(tempU8, tempData, clen * sizeof(unsigned char));
+		  c += clen;
 		packU96FormatToThreePacket(s, tempU8);
 	}
 

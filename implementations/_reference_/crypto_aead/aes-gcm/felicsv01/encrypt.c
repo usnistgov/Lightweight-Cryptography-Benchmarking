@@ -57,7 +57,8 @@ void encrypt_message(gcm_state_t * gcm_state, uint8_t *message, uint16_t len) {
         for (i = 0; i < 16; i++) {
             aes_state[i] = cb[i];
         }
-        aes_encrypt(aes_state, gcm_state->round_keys);
+        // By CC - updated function name aes_encrypt()
+        aes_encrypt2(aes_state, gcm_state->round_keys);
         n_xor = (remaining_bytes < 16) ? remaining_bytes : 16;
         for (i = 0; i < n_xor; i++) {
             current_block[i] ^= aes_state[i];

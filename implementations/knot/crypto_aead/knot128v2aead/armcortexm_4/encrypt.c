@@ -96,7 +96,7 @@ void ProcessCiphertext(u32 *s, unsigned char *m, const unsigned char *c, unsigne
 {
 	u32 dataFormat[12] = { 0 };
 	u32 dataFormat_1[12] = { 0 };
-	u8 tempU8[24] = { 0 },i;
+	u8 tempU8[24] = { 0 },tempData[24] = { 0 };
 	if (clen) {
 		while (clen >= aead_RATE) {
 			packU96FormatToThreePacket(dataFormat, c);
@@ -123,12 +123,18 @@ void ProcessCiphertext(u32 *s, unsigned char *m, const unsigned char *c, unsigne
 		}
 		unpackU96FormatToThreePacket(tempU8, s);
 		unpackU96FormatToThreePacket(tempU8 + 12, s + 3);
-		for (i = 0; i < clen; ++i, ++m, ++c)
-		{
-			*m = tempU8[i] ^ *c;
-			tempU8[i] = *c;
-		}
-		tempU8[i] ^= 0x01;
+		  memset(tempData, 0, sizeof(tempData));
+		  memcpy(tempData, c, clen * sizeof(unsigned char));
+		  tempData[clen] = 0x01;
+		  U32BIG(((u32*)tempU8)[0]) ^= U32BIG(((u32* )tempData)[0]);
+		  U32BIG(((u32*)tempU8)[1]) ^= U32BIG(((u32* )tempData)[1]);
+		  U32BIG(((u32*)tempU8)[2]) ^= U32BIG(((u32* )tempData)[2]);
+		  U32BIG(((u32*)tempU8)[3]) ^= U32BIG(((u32* )tempData)[3]);
+		  U32BIG(((u32*)tempU8)[4]) ^= U32BIG(((u32* )tempData)[4]);
+		  U32BIG(((u32*)tempU8)[5]) ^= U32BIG(((u32* )tempData)[5]);
+		  memcpy(m, tempU8, clen * sizeof(unsigned char));
+		  memcpy(tempU8, tempData, clen * sizeof(unsigned char));
+		  c += clen;
 		packU96FormatToThreePacket(s, tempU8);
 		packU96FormatToThreePacket(s + 3, tempU8 + 12);
 	}

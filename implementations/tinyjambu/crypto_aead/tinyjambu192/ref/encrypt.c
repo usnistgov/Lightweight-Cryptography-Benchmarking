@@ -1,14 +1,12 @@
 /*   
      TinyJAMBU: 192-bit key, 96-bit IV  
-	 Reference implementation for 32-bit CPU
+     Reference implementation for 32-bit CPU
      The state consists of four 32-bit registers       
      state[3] || state[2] || state[1] || state[0]  
 
-	 Implemented by: Hongjun Wu
+     Implemented by: Hongjun Wu
 */   
-
-#include <string.h>  
-#include <stdio.h> 
+ 
 #include "crypto_aead.h"
 
 #define FrameBitsIV  0x10  
@@ -42,21 +40,21 @@ void state_update(unsigned int *state, const unsigned char *key, unsigned int nu
 /* The input to initialization is the 192-bit key; 96-bit IV;*/
 void initialization(const unsigned char *key, const unsigned char *iv, unsigned int *state)
 {
-        int i;
+	int i;
 
-        //initialize the state as 0  
-		for (i = 0; i < 4; i++) state[i] = 0;     
+	//initialize the state as 0  
+	for (i = 0; i < 4; i++) state[i] = 0;     
 
-		//update the state with the key  
-		state_update(state, key, NROUND2);  
+	//update the state with the key  
+	state_update(state, key, NROUND2);  
 
-		//introduce IV into the state  
-        for (i = 0;  i < 3; i++)  
-        {
-			state[1] ^= FrameBitsIV;   
-			state_update(state, key, NROUND1); 
-			state[3] ^= ((unsigned int*)iv)[i]; 
-		}   
+	//introduce IV into the state  
+	for (i = 0;  i < 3; i++)  
+	{
+		state[1] ^= FrameBitsIV;   
+		state_update(state, key, NROUND1); 
+		state[3] ^= ((unsigned int*)iv)[i]; 
+	}   
 }
 
 //process the associated data   
@@ -92,15 +90,15 @@ int crypto_aead_encrypt(
 	const unsigned char *k
 	)
 {
-    unsigned long long i;
+	unsigned long long i;
 	unsigned int j; 
-    unsigned char mac[8]; 
-    unsigned int state[4];   
+	unsigned char mac[8]; 
+	unsigned int state[4];   
 
-    //initialization stage
-    initialization(k, npub, state);
+	//initialization stage
+	initialization(k, npub, state);
 
-    //process the associated data   
+	//process the associated data   
 	process_ad(k, ad, adlen, state); 
 
 	//process the plaintext    
@@ -133,10 +131,10 @@ int crypto_aead_encrypt(
 	state_update(state, k, NROUND1);
 	((unsigned int*)mac)[1] = state[2];
 
-    *clen = mlen + 8; 
-    memcpy(c + mlen, mac, 8);  
+	*clen = mlen + 8; 
+        for (j = 0; j < 8; j++) c[mlen+j] = mac[j];  
 
-    return 0;
+	return 0;
 }
 
 //decrypt a message
@@ -195,6 +193,6 @@ int crypto_aead_decrypt(
 
 	//verification of the authentication tag   
 	for (j = 0; j < 8; j++) { check |= (mac[j] ^ c[clen - 8 + j]); }
-    if (check == 0) return 0;  
-    else return -1;
+        if (check == 0) return 0;  
+        else return -1;
 }

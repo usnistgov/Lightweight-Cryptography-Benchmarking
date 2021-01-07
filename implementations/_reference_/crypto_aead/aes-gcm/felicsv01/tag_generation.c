@@ -66,7 +66,8 @@ void TagGeneration(uint8_t *state, uint8_t *tag) {
     mul_h(gcm_state->H, t, tag);
 
     /* authenticate */
-    aes_encrypt(gcm_state->icb, gcm_state->round_keys);
+    // By CC - updated function name aes_encrypt()
+    aes_encrypt2(gcm_state->icb, gcm_state->round_keys);
     for (j = 0; j < 16; j++) {
         tag[j] = gcm_state->icb[j] ^ tag[j];
     }

@@ -4,7 +4,7 @@
 
 hash_ctx lwc_hash_ctx = {
 	"drygascon128hash",
-	"ryhs",
+	"rhys",
 	CRYPTO_BYTES,
 	drygascon128_hash,
 };

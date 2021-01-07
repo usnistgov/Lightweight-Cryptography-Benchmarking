@@ -1,14 +1,12 @@
 /*
      TinyJAMBU-192: 192-bit key, 96-bit IV 
-	 Optimized Implementation for 32-bit processor 
+     Optimized Implementation for 32-bit processor 
      The state consists of four 32-bit registers       
      state[3] || state[2] || state[1] || state[0]
 
-	 Implemented by Hongjun Wu
+     Implemented by Hongjun Wu
 */   
 
-#include <string.h>  
-#include <stdio.h> 
 #include "crypto_aead.h"
 
 #define FrameBitsIV  0x10  
@@ -165,7 +163,7 @@ int crypto_aead_encrypt(
 	((unsigned int*)mac)[1] = state[2];
 
 	*clen = mlen + 8;
-	memcpy(c + mlen, mac, 8);
+	for (j = 0; j < 8; j++) c[mlen+j] = mac[j];  
 
 	return 0;
 }

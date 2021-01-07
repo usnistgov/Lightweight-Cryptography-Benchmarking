@@ -43,7 +43,8 @@ void Initialize(uint8_t *state, const uint8_t *key, const uint8_t *nonce) {
     for (i = 0; i < 16; i++) {
         gcm_state->H[i] = 0;
     }
-    aes_encrypt(gcm_state->H, gcm_state->round_keys);
+    // By CC - updated function name aes_encrypt()
+    aes_encrypt2(gcm_state->H, gcm_state->round_keys);
 
     gcm_state->icb[0] = nonce[0];
     gcm_state->icb[1] = nonce[1];

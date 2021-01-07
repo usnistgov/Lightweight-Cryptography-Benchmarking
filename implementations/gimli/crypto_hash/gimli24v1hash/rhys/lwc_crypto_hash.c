@@ -4,7 +4,7 @@
 
 hash_ctx lwc_hash_ctx = {
 	"gimli24v1hash",
-	"ryhs",
+	"rhys",
 	CRYPTO_BYTES,
 	gimli24_hash,
 };

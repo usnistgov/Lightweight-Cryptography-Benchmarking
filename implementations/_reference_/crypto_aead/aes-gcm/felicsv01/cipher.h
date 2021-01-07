@@ -177,6 +177,10 @@
 #define ALIGNED __attribute__ ((aligned(ALIGN_ARM_BOUNDRY)))
 #endif /* ARM ALIGNED */
 
+// By CC
+#if !defined(ALIGNED)
+#define ALIGNED
+#endif
 
 /*
  *

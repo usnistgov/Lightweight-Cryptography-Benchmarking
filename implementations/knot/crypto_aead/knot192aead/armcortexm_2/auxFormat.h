@@ -16,27 +16,21 @@ typedef unsigned long long u64;
 
 
 #define ARR_SIZE(a) (sizeof((a))/sizeof((a[0])))
+#define puckU32ToThree_1(x){\
+x &= 0x49249249;\
+x = (x | (x >>  2)) & 0xc30c30c3;\
+x = (x | (x >>4)) & 0x0f00f00f;\
+x = (x | (x >> 8)) & 0xff0000ff;\
+x = (x | (x >> 16)) & 0xfff;\
+}
+#define unpuckU32ToThree_1(x){\
+x &= 0xfff;\
+x = (x | (x << 16)) & 0xff0000ff;\
+x = (x | (x << 8)) & 0x0f00f00f;\
+x = (x | (x << 4)) & 0xc30c30c3;\
+x = (x | (x << 2)) & 0x49249249;\
+}
 
-/*
-s0  s1  s2
-s3  s4  s5
-s6  s7  s8
-s9 s10 s11
-*/
-#define puckU32ToThree(x){\
-x &= 0x92492492;\
-x = (x | (x << 2)) & 0xc30c30c3;\
-x = (x | (x << 4)) & 0xf00f00f0;\
-x = (x | (x << 8)) & 0xff0000ff;\
-x = (x | (x << 16)) & 0xfff00000;\
-}
-#define unpuckU32ToThree(x){\
-x &= 0xfff00000;\
-x = (x | (x >> 16)) & 0xff0000ff;\
-x = (x | (x >> 8)) & 0xf00f00f0;\
-x = (x | (x >> 4)) & 0xc30c30c3;\
-x = (x | (x >> 2)) & 0x92492492;\
-}
 
 unsigned char  constant7Format[76];
 #define P384_ARC_SC1(rci,S2,S3,S4) \

@@ -4,7 +4,7 @@
 
 hash_ctx lwc_hash_ctx = {
 	"photonbeetlehash256rate32v1",
-	"ryhs",
+	"rhys",
 	CRYPTO_BYTES,
 	photon_beetle_hash,
 };

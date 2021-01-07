@@ -4,6 +4,16 @@
 #define PR0_ROUNDS 100
 #define PR_ROUNDS 52
 #define PRF_ROUNDS 56
+/*
+
+#define PR0_ROUNDS 100
+#define PR_ROUNDS 76
+#define PRF_ROUNDS 80
+
+#define PR0_ROUNDS 100
+#define PR_ROUNDS 52
+#define PRF_ROUNDS 56
+ * */
 void Initialize(u32 *s, const unsigned char *npub, const unsigned char *k) {
 	packU128FormatToFourPacket(s, npub);
 	packU128FormatToFourPacket(s + 4, npub + 16);
@@ -92,7 +102,7 @@ void ProcessCiphertext(u32 *s, unsigned char *m, const unsigned char *c,
 		unsigned long long clen) {
 	u32 dataFormat[8] = { 0 };
 	u32 dataFormat_1[4] = { 0 };
-	u8 i, tempU8[64] = { 0 };
+	u8 tempData[64] = { 0 }, tempU8[64] = { 0 };
 	if (clen) {
 		while (clen >= aead_RATE) {
 			packU128FormatToFourPacket(dataFormat, c);
@@ -111,11 +121,20 @@ void ProcessCiphertext(u32 *s, unsigned char *m, const unsigned char *c,
 			c += aead_RATE;
 		}
 		unpackU128FormatToFourPacket(tempU8, s);
-		for (i = 0; i < clen; ++i, ++m, ++c) {
-			*m = tempU8[i] ^ *c;
-			tempU8[i] = *c;
-		}
-		tempU8[i] ^= 0x01;
+		  memset(tempData, 0, sizeof(tempData));
+		  memcpy(tempData, c, clen * sizeof(unsigned char));
+		  tempData[clen] = 0x01;
+		  U32BIG(((u32*)tempU8)[0]) ^= U32BIG(
+		    ((u32* )tempData)[0]);
+		  U32BIG(((u32*)tempU8)[1]) ^= U32BIG(
+		    ((u32* )tempData)[1]);
+		  U32BIG(((u32*)tempU8)[2]) ^= U32BIG(
+		    ((u32* )tempData)[2]);
+		  U32BIG(((u32*)tempU8)[3]) ^= U32BIG(
+		    ((u32* )tempData)[3]);
+		  memcpy(m, tempU8, clen * sizeof(unsigned char));
+		  memcpy(tempU8, tempData, clen * sizeof(unsigned char));
+		  c += clen;
 		packU128FormatToFourPacket(s, tempU8);
 	}
 }

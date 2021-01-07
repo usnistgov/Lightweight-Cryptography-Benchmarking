@@ -4,7 +4,7 @@
 
 hash_ctx lwc_hash_ctx = {
 	"orangishv1",
-	"ryhs",
+	"rhys",
 	CRYPTO_BYTES,
 	orangish_hash,
 };

@@ -135,8 +135,9 @@ void aes_enc_lastround(uint8_t *block, uint8_t *round_key) {
     }
 }
 
-
-void aes_encrypt(uint8_t *block, uint8_t *round_keys) {
+// By CC
+// Changed function name to aes_encrypt2 due to a naming conflict with Espressif library
+void aes_encrypt2(uint8_t *block, uint8_t *round_keys) {
     uint8_t i;
 
 

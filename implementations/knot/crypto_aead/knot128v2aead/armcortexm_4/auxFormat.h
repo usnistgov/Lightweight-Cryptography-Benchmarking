@@ -14,7 +14,14 @@ typedef unsigned long long u64;
 #define PR0_ROUNDS 76
 #define PR_ROUNDS 28
 #define PRF_ROUNDS 32
+/*
 
+#define PR0_ROUNDS 76
+#define PR_ROUNDS 40
+#define PRF_ROUNDS 44
+
+
+ * */
 #define ARR_SIZE(a) (sizeof((a))/sizeof((a[0])))
 #define LOTR32(x,n) (((x)<<(n))|((x)>>(32-(n))))
 
@@ -35,24 +42,22 @@ t4 = LOTR32(t2, 18);\
 t5 = LOTR32(t0, 19); \
 }
 
-//////////////////puck begin
-//&:5   <<:4    |:4
-#define puckU32ToThree(x){\
-x &= 0x92492492;\
-x = (x | (x << 2)) & 0xc30c30c3;\
-x = (x | (x << 4)) & 0xf00f00f0;\
-x = (x | (x << 8)) & 0xff0000ff;\
-x = (x | (x << 16)) & 0xfff00000;\
-}
-#define unpuckU32ToThree(x){\
-x &= 0xfff00000;\
-x = (x | (x >> 16)) & 0xff0000ff;\
-x = (x | (x >> 8)) & 0xf00f00f0;\
-x = (x | (x >> 4)) & 0xc30c30c3;\
-x = (x | (x >> 2)) & 0x92492492;\
-}
-
 void packU96FormatToThreePacket(u32 * out, u8 * in);
 void unpackU96FormatToThreePacket(u8 * out, u32 * in);
 
 unsigned char  constant7Format[80];
+#define puckU32ToThree_1(x){\
+x &= 0x49249249;\
+x = (x | (x >>  2)) & 0xc30c30c3;\
+x = (x | (x >>4)) & 0x0f00f00f;\
+x = (x | (x >> 8)) & 0xff0000ff;\
+x = (x | (x >> 16)) & 0xfff;\
+}
+#define unpuckU32ToThree_1(x){\
+x &= 0xfff;\
+x = (x | (x << 16)) & 0xff0000ff;\
+x = (x | (x << 8)) & 0x0f00f00f;\
+x = (x | (x << 4)) & 0xc30c30c3;\
+x = (x | (x << 2)) & 0x49249249;\
+}
+

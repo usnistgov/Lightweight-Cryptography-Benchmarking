@@ -4,7 +4,7 @@
 
 aead_ctx lwc_aead_cipher = {
 	"elephant200v1",
-	"ref_parallel",
+	"ref-parallel",
 	CRYPTO_KEYBYTES,
 	CRYPTO_NPUBBYTES,
 	CRYPTO_ABYTES,
