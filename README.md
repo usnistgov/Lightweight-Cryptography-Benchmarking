@@ -23,7 +23,7 @@ Currently, the benchmarking is being performed on the following development boar
 
 # Results
 
-The latest benchmarks results can be found [here]benchmarks/).
+The latest benchmarks results can be found [here](benchmarks/).
 
 # Contact
 
