@@ -1,6 +1,5 @@
 #include "lwc_crypto_aead.h"
 #include "api.h"
-#include "sparkle.h"
 
 
 aead_ctx lwc_aead_cipher = {
@@ -9,7 +8,7 @@ aead_ctx lwc_aead_cipher = {
 	CRYPTO_KEYBYTES,
 	CRYPTO_NPUBBYTES,
 	CRYPTO_ABYTES,
-	schwaemm_256_256_aead_encrypt,
-	schwaemm_256_256_aead_decrypt
+	crypto_aead_encrypt,
+	crypto_aead_decrypt
 };
 
