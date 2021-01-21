@@ -95,6 +95,14 @@ drygascon,drygascon128hash,rhys,yes,Os,1168,6191,6132,10334,18988,36249,276937
 drygascon,drygascon128hash,rhys,yes,O1,1296,6063,5893,10135,18517,35485,271693
 drygascon,drygascon128hash,rhys,yes,O2,1248,4798,4629,7946,14503,27615,211190
 drygascon,drygascon128hash,rhys,yes,O3,2584,4429,4378,7507,13754,26119,199754
+drygascon,drygascon128hash,opt-le32,yes,Os,1216,6955,6874,11083,19497,36321,271872
+drygascon,drygascon128hash,opt-le32,yes,O1,1296,6917,6649,10858,19358,36142,271087
+drygascon,drygascon128hash,opt-le32,yes,O2,1232,5523,5362,8644,15224,28286,210469
+drygascon,drygascon128hash,opt-le32,yes,O3,2560,4528,4340,7446,13650,25902,198214
+drygascon,drygascon128hash,arm-v7m-fpu-cortex-m4,yes,Os,1304,4326,4192,6452,11016,20166,147995
+drygascon,drygascon128hash,arm-v7m-fpu-cortex-m4,yes,O1,1304,4142,4117,6275,10982,20136,147990
+drygascon,drygascon128hash,arm-v7m-fpu-cortex-m4,yes,O2,1320,4140,4123,6430,11000,20064,147675
+drygascon,drygascon128hash,arm-v7m-fpu-cortex-m4,yes,O3,1248,3224,3221,5528,10093,19222,146932
 drygascon,drygascon256hash,le32,no,Os,2884,87942,87907,119859,183700,311432,2099705
 drygascon,drygascon256hash,le32,no,O1,4156,51602,51553,69847,106399,179515,1203145
 drygascon,drygascon256hash,le32,no,O2,5276,52516,52459,71414,109085,184405,1238885
