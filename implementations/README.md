@@ -4,6 +4,7 @@ This folder contains the implementations of Round 2 candidates collected from th
  - https://github.com/aadomn/skinny
  - https://github.com/ArneDeprez1/ForkAE-SW
  - https://github.com/ascon/ascon-c
+ - https://github.com/sebastien-riou/DryGASCON
  - https://github.com/TimBeyne/Elephant
  - https://github.com/cryptolu/FELICS
  - https://github.com/ARMmbed/mbedtls
