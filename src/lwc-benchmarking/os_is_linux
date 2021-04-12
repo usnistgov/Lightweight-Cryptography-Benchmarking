@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        exit 1
+elif [[ "$OSTYPE" == "cygwin" ]]; then
+        # POSIX compatibility layer and Linux environment emulation for Windows
+        exit 0
+elif [[ "$OSTYPE" == "msys" ]]; then
+        # Lightweight shell and GNU utilities compiled for Windows (part of MinGW)
+        exit 0
+else
+        echo "ERROR: Unknown/unsupported OS '$OSTYPE'"
+        read -n 1 -s -r -p "Press any key to exit"
+        echo ""
+        exit 0
+fi

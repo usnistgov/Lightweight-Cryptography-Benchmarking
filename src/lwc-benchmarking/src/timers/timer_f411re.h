@@ -29,48 +29,60 @@
 // copyright protection within the United States.
 //
 
-#include "utils.h"
-#include <Arduino.h>
+#pragma once
 
 
-sout SOUT;
-sendl SENDL;
+#ifdef LWC_PLATFORM_F411RE
 
-sout& operator<<(sout &s, sendl&)
-{
-    Serial.println();
-    return s;
-}
+class timer_cycles {
 
-void stop_watch(int seconds, const char *caption)
-{
-    for(int i = seconds; i > 0; i--)
-    {
-        if(caption)
-            SOUT << caption << ' ';
+public:
 
-        SOUT << i << " seconds" << SENDL;
-        delay(1000);
+    timer_cycles(uint32_t& output) : _output(output) {
+
+        static bool reload_register_set = false;
+
+        if(!reload_register_set) {
+            SysTick_Config(1 << 24);
+            reload_register_set = true;
+        }
+
+        __disable_irq();
+
+        _start = SysTick->VAL;
     }
-}
 
-const char* get_platform_name()
-{
-    #if defined (LWC_PLATFORM_MKRZERO)
-        return "mkrzero";
-    #elif defined (LWC_PLATFORM_F411RE)
-        return "f411re";
-    #elif defined (LWC_PLATFORM_NANO33BLE)
-        return "nano33ble";
-    #elif defined (LWC_PLATFORM_NANOEVERY)
-        return "nanoevery";
-    #elif defined (LWC_PLATFORM_UNO)
-        return "uno";
-    #elif defined(LWC_PLATFORM_NODEMCUV2)
-        return "nodemcuv2";
-    #elif defined(LWC_PLATFORM_PIC32MX)
-        return "pic32mx";
-    #else
-        return "Unknown platform";
-    #endif
-}
+    ~timer_cycles() {
+
+        uint32_t end = SysTick->VAL;
+
+        _output = (end <= _start) ? (_start - end) : (_start + (SysTick->LOAD - end));
+
+       __enable_irq();
+    }
+
+    static const char *name() {
+        return "systick";
+    }
+
+private:
+
+    uint32_t &_output;
+    volatile uint32_t _start;
+};
+
+
+struct systick_reload_max {
+
+    // set to max value
+    systick_reload_max() {
+        SysTick_Config(1 << 24);
+    }
+
+    // restore at destruction
+    ~systick_reload_max() {
+        SysTick_Config( SystemCoreClock / 1000 );
+    }
+};
+
+#endif // LWC_PLATFORM_F411RE

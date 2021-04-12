@@ -8,12 +8,10 @@ if __name__ == '__main__':
     out = False
     with open(sys.argv[1]) as f:
         for line in f.readlines():
-            if line.startswith('Count'):
+            if line.startswith('Count = 1'):
                 out = True
             elif line.startswith('# lwc exit'):
                 break
 
             if out:
                 print(line, end='')
-            
-    
