@@ -29,7 +29,7 @@ The latest benchmarks results can be found [here](benchmarks/).
 
 [Lightweight Cryptography Project Webpage](https://csrc.nist.gov/projects/lightweight-cryptography)
 
-[E-mail](lightweight-crypto@nist.gov)
+[E-mail](mailto:lightweight-crypto@nist.gov)
 
 # Disclaimer
 
