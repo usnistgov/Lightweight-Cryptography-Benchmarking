@@ -1,30 +1,30 @@
 #
 # NIST-developed software is provided by NIST as a public service.
 # You may use, copy and distribute copies of the software in any medium,
-# provided that you keep intact this entire notice. You may improve, 
+# provided that you keep intact this entire notice. You may improve,
 # modify and create derivative works of the software or any portion of
 # the software, and you may copy and distribute such modifications or
 # works. Modified works should carry a notice stating that you changed
 # the software and should note the date and nature of any such change.
-# Please explicitly acknowledge the National Institute of Standards and 
+# Please explicitly acknowledge the National Institute of Standards and
 # Technology as the source of the software.
 #
-# NIST-developed software is expressly provided "AS IS." NIST MAKES NO 
+# NIST-developed software is expressly provided "AS IS." NIST MAKES NO
 # WARRANTY OF ANY KIND, EXPRESS, IMPLIED, IN FACT OR ARISING BY OPERATION
 # OF LAW, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTY OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT AND DATA ACCURACY. NIST
-# NEITHER REPRESENTS NOR WARRANTS THAT THE OPERATION OF THE SOFTWARE WILL BE 
-# UNINTERRUPTED OR ERROR-FREE, OR THAT ANY DEFECTS WILL BE CORRECTED. NIST 
+# NEITHER REPRESENTS NOR WARRANTS THAT THE OPERATION OF THE SOFTWARE WILL BE
+# UNINTERRUPTED OR ERROR-FREE, OR THAT ANY DEFECTS WILL BE CORRECTED. NIST
 # DOES NOT WARRANT OR MAKE ANY REPRESENTATIONS REGARDING THE USE OF THE SOFTWARE
 # OR THE RESULTS THEREOF, INCLUDING BUT NOT LIMITED TO THE CORRECTNESS, ACCURACY,
 # RELIABILITY, OR USEFULNESS OF THE SOFTWARE.
 #
-# You are solely responsible for determining the appropriateness of using and 
-# distributing the software and you assume all risks associated with its use, 
-# including but not limited to the risks and costs of program errors, compliance 
-# with applicable laws, damage to or loss of data, programs or equipment, and 
+# You are solely responsible for determining the appropriateness of using and
+# distributing the software and you assume all risks associated with its use,
+# including but not limited to the risks and costs of program errors, compliance
+# with applicable laws, damage to or loss of data, programs or equipment, and
 # the unavailability or interruption of operation. This software is not intended
-# to be used in any situation where a failure could cause risk of injury or 
+# to be used in any situation where a failure could cause risk of injury or
 # damage to property. The software developed by NIST employees is not subject to
 # copyright protection within the United States.
 #
@@ -32,7 +32,7 @@
 #!/bin/bash
 
 # Target platform names
-platform_list=("mkrzero uno nano33ble nano_every nodemcuv2 chipkit_mx3")
+platform_list=("mkrzero uno f411re nano33ble nano_every nodemcuv2 chipkit_mx3")
 
 # List of experiments to be performed
 experiment_list=("size kat timing")
@@ -49,6 +49,19 @@ skip_variant=("")
 # The list of implementation names to be omitted from processing
 skip_impl=("")
 
+if [ "" == "$PYTHON" ]; then
+    PYTHON=python
+    echo "Using '$PYTHON' as python. If you don't like that, define PYTHON env var."
+fi
+
+if [ "" == "$PLATFORMIO" ]; then
+    PLATFORMIO=platformio.exe
+    echo "Using '$PLATFORMIO' as PLATFORMIO. If you don't like that, define PLATFORMIO env var."
+fi
+
+./os_is_linux
+export OS_IS_LINUX=$?
+echo "OS_IS_LINUX='$OS_IS_LINUX'"
 
 #
 # Folders
@@ -115,19 +128,25 @@ function stop_watch() {
 }
 
 function wait_eof_marker() {
-
+    echo "wait_eof_marker $outfile"
 	# Check output file periodically until the end of file marker is found or an exception is generated
-	count=0
+    count=0
 	while [ $count -eq 0 ]
 	do
-		sleep 10s
+		sleep 3s
 		count=$(grep -c "$eof_marker" $outfile)
 
 		# nodemcuv2 can generate exceptions
 		except=$(grep -c "CUT HERE FOR EXCEPTION DECODER" $outfile)
 
 		count=$(($count + $except))
+
+		tvcount=$(grep -c "Count" $outfile)
+		printf "\r process running, test vectors done so far: $tvcount"
+
 	done
+    printf "\n"
+    echo "wait_eof_marker exit"
 }
 
 #
@@ -174,7 +193,7 @@ function verify_kat() {
 				echo $lwc_mode_genkat > src/lwc_mode.h
 
 				print_info "building implementation $impl with config $conf"
-				platformio.exe run --verbose --environment $conf > $buildout 2> $builderr
+				$PLATFORMIO run --verbose --environment $conf > $buildout 2> $builderr
 
 				if [[ "$?" -ne 0 ]]; then
 					print_error "build failed for $submission, $variant, $impl, $conf"
@@ -182,16 +201,23 @@ function verify_kat() {
 				else
 
 					stop_watch "uploading" 3
-					platformio.exe run --verbose --target upload --environment $conf > $temp_folder/upload_out.txt 2> $temp_folder/upload_err.txt
-					sleep 3s
-					platformio.exe device monitor > $outfile& 2> $temp_folder/serial_err.txt
-					PID=$!
+					$PLATFORMIO run --verbose --target upload --environment $conf > $temp_folder/upload_out.txt 2> $temp_folder/upload_err.txt
+					stop_watch "launching" 3
 
-					wait_eof_marker
-						
-					kill -9 $PID
+ 					if [ $OS_IS_LINUX -ne 0 ]
+ 					then
+ 					 	#on Linux, we cannot get platformio in background AND redirect its output. We get "Error: (25, ‘Inappropriate ioctl for device’)"
+ 						./wait_eof_marker.sh $outfile &
+ 						$PLATFORMIO device monitor 2> $temp_folder/serial_err.txt > $outfile
+ 					else
+ 						#on Windows, pgrep may not be available, so we stick to putting platformio in background
+ 						$PLATFORMIO device monitor > $outfile& 2> $temp_folder/serial_err.txt
+ 						PID=$!
+ 						wait_eof_marker
+ 						kill -9 $PID
+ 					fi
 
-					python trim_genkat_output.py $outfile > $temp_folder/kat.txt
+					$PYTHON trim_genkat_output.py $outfile > $temp_folder/kat.txt
 
 					diff -w $temp_folder/kat.txt $impl_folder/$submission/$prim_dir/$variant/$kat_file > $difffile
 
@@ -210,7 +236,7 @@ function verify_kat() {
 			fi # output file exists
 
 		fi # KAT file not found
-										
+
 	done # conf
 
 	print_info "-verify_kat()"
@@ -249,7 +275,7 @@ function measure_code_size() {
 			echo "#define LWC_MODE_USE_$mode" > src/lwc_mode.h
 
 			if [[ $prim == "aead" ]]; then
-				python gen_lwc_aead.py src/iut/$impl/lwc_crypto_aead.in $mode > src/iut/$impl/$infile
+				$PYTHON gen_lwc_aead.py src/iut/$impl/lwc_crypto_aead.in $mode > src/iut/$impl/$infile
 			fi
 
 			# Skip if an output file exists
@@ -261,7 +287,7 @@ function measure_code_size() {
 
 				print_info "building implementation $impl with config $conf"
 
-				platformio.exe run --verbose --environment $conf > $outfile 2> $errfile
+				$PLATFORMIO run --verbose --environment $conf > $outfile 2> $errfile
 
 				if [[ "$?" -ne 0 ]]; then
 					print_error "build failed for $submission, $variant, $impl, $conf, $mode"
@@ -284,7 +310,7 @@ function measure_code_size() {
 						bss=$(awk '/\.bss/ {print $2}' $outfile)
 						printf ",$data,$text,$rodata,$bss" >> $out_folder/sizes_raw.txt
 					elif [[ $target == "chipkit_mx3" ]]; then
-						data=$(python chipkit_codesize.py $outfile)
+						data=$($PYTHON chipkit_codesize.py $outfile)
 						printf ",$data" >> $out_folder/sizes_raw.txt
 					else
 						bss=$(awk '/\.bss\s/ {print $2}' $outfile)
@@ -339,21 +365,28 @@ function measure_timing() {
 			else
 				print_info "building implementation $impl with config $conf"
 
-				platformio.exe run --verbose --environment $conf > $buildout 2> $builderr
+				$PLATFORMIO run --verbose --environment $conf > $buildout 2> $builderr
 
 				if [[ "$?" -ne 0 ]]; then
 					print_error "build failed for $submission, $variant, $impl, $conf"
 					echo "build failed" > $outfile
 				else
 					stop_watch "uploading" 3
-					platformio.exe run --verbose --target upload --environment $conf > $uploadout 2> $uploaderr
-					sleep 3s
-					platformio.exe device monitor > $outfile&
-					PID=$!
+					$PLATFORMIO run --verbose --target upload --environment $conf > $uploadout 2> $uploaderr
+					stop_watch "launching" 3
 
-					wait_eof_marker
-
-					kill -9 $PID
+ 					if [ $OS_IS_LINUX -ne 0 ]
+ 					then
+ 					 	#on Linux, we cannot get platformio in background AND redirect its output. We get "Error: (25, ‘Inappropriate ioctl for device’)"
+ 						./wait_eof_marker.sh $outfile &
+ 						$PLATFORMIO device monitor 2> $temp_folder/serial_err.txt > $outfile
+ 					else
+ 						#on Windows, pgrep may not be available, so we stick to putting platformio in background
+ 						$PLATFORMIO device monitor > $outfile& 2> $temp_folder/serial_err.txt
+ 						PID=$!
+ 						wait_eof_marker
+ 						kill -9 $PID
+ 					fi
 				fi
 
 			fi
@@ -391,10 +424,10 @@ function check_source_compatibility() {
 	impl_arch=""
 
 	local folder
-	
+
 	folder=$impl_folder/$submission/$prim_dir/$variant/$impl
 
-	if [[ -r "$folder/lwc_arch_avr" ]]; then 
+	if [[ -r "$folder/lwc_arch_avr" ]]; then
 		impl_arch="avr"
 	elif [[ -r "$folder/lwc_arch_armv6" ]]; then
 		impl_arch='armv6'
@@ -437,7 +470,7 @@ process_primary=false
 overwrite=false
 
 function print_usage() {
-	
+
 	echo "Usage: build.sh [-t | --target] target [options]
 		Options:
 		-t | --target <arg>     Target platform; one of {mkrzero, uno, nano33ble, nano_every, nodemcuv2, chipkit_mx3}.
@@ -450,7 +483,7 @@ function print_usage() {
 		-w | --overwrite        Do not skip an experiment if a result file already exists.
 		-p | --primary          Process only primary variants.
 
-	Note: If there are more than one arguments for -e, -s, -v, and -i, they must be provided 
+	Note: If there are more than one arguments for -e, -s, -v, and -i, they must be provided
 	      in double quotes and separated by space.
 	      Ex: -e \"kat size\"
 	"
@@ -582,6 +615,8 @@ if [[ "$target" == "mkrzero" ]]; then
 	supported_impl="armv6m"
 elif [[ "$target" == "uno" ]]; then
 	supported_impl="avr"
+elif [[ "$target" == "f411re" ]]; then
+	supported_impl="armv6m armv7m"
 elif [[ "$target" == "nano33ble" ]]; then
 	supported_impl="armv6m armv7m"
 elif [[ "$target" == "nano_every" ]]; then
@@ -720,7 +755,7 @@ for submission in $submissions; do
 					fi
 
 					# Check target compatibility
-					check_source_compatibility 
+					check_source_compatibility
 					if [[ $? -eq 0 ]]; then
 						print_warning "skipping implementation $impl [not target compatible]"
 						continue
@@ -803,13 +838,13 @@ for submission in $submissions; do
 					fi
 
 				done # impl
-		
+
 			done # variant
 
 		fi # if prim_dir
 
 	done # prim_dir
-	
+
 done # submission
 
 cd $base_folder
