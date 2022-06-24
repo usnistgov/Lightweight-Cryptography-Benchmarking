@@ -1,1 +1,0 @@
-gcc encrypt.c genkat_aead.c -std=c99 -Wall -Wextra -Wshadow -fsanitize=address,undefined -O2 -o out

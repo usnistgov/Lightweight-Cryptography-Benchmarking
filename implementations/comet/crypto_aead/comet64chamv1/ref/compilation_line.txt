@@ -1,1 +1,0 @@
-gcc *.c -std=c99 -Wall -Wextra -Wshadow -fsanitize=address,undefined -O2 -o exe

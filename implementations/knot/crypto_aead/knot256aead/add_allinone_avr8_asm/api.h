@@ -1,9 +1,0 @@
-#ifndef KNOT_API_H
-#define KNOT_API_H
-//k=n=tag=256  b=512 r=128 c=384
-#define CRYPTO_KEYBYTES 32
-#define CRYPTO_NSECBYTES 0
-#define CRYPTO_NPUBBYTES 32
-#define CRYPTO_ABYTES 32
-#define CRYPTO_NOOVERLAP 1
-#endif
