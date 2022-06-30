@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2021 Southern Storm Software, Pty Ltd.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -20,19 +20,9 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "grain128.h"
+#include "grain-aead.h"
 #include "internal-grain128.h"
 #include <string.h>
-
-aead_cipher_t const grain128_aead_cipher = {
-    "Grain-128AEAD",
-    GRAIN128_KEY_SIZE,
-    GRAIN128_NONCE_SIZE,
-    GRAIN128_TAG_SIZE,
-    AEAD_FLAG_NONE,
-    grain128_aead_encrypt,
-    grain128_aead_decrypt
-};
 
 /**
  * \brief Encodes the associated data length in DER.
@@ -44,7 +34,7 @@ aead_cipher_t const grain128_aead_cipher = {
  * \return The length of the DER encoding that was written to \a buf.
  */
 static unsigned grain128_encode_adlen
-    (unsigned char buf[5], unsigned long long adlen)
+    (unsigned char buf[5], size_t adlen)
 {
     if (adlen < 0x80U) {
         buf[0] = (unsigned char)adlen;
@@ -75,24 +65,24 @@ static unsigned grain128_encode_adlen
 }
 
 int grain128_aead_encrypt
-    (unsigned char *c, unsigned long long *clen,
-     const unsigned char *m, unsigned long long mlen,
-     const unsigned char *ad, unsigned long long adlen,
-     const unsigned char *nsec,
+    (unsigned char *c, size_t *clen,
+     const unsigned char *m, size_t mlen,
+     const unsigned char *ad, size_t adlen,
      const unsigned char *npub,
      const unsigned char *k)
 {
     grain128_state_t state;
     unsigned char der[5];
     unsigned derlen;
-    (void)nsec;
 
     /* Set the length of the returned ciphertext */
     *clen = mlen + GRAIN128_TAG_SIZE;
 
+#if defined(LW_UTIL_CPU_IS_64BIT)
     /* Limit the amount of associated data to make DER encoding easier */
     if (adlen >= 0x100000000ULL)
         return -2;
+#endif
 
     /* Initialize the Grain-128 stream cipher with the key and nonce */
     grain128_setup(&state, k, npub);
@@ -112,26 +102,26 @@ int grain128_aead_encrypt
 }
 
 int grain128_aead_decrypt
-    (unsigned char *m, unsigned long long *mlen,
-     unsigned char *nsec,
-     const unsigned char *c, unsigned long long clen,
-     const unsigned char *ad, unsigned long long adlen,
+    (unsigned char *m, size_t *mlen,
+     const unsigned char *c, size_t clen,
+     const unsigned char *ad, size_t adlen,
      const unsigned char *npub,
      const unsigned char *k)
 {
     grain128_state_t state;
     unsigned char der[5];
     unsigned derlen;
-    (void)nsec;
 
     /* Validate the ciphertext length and set the return "mlen" value */
     if (clen < GRAIN128_TAG_SIZE)
         return -1;
     *mlen = clen - GRAIN128_TAG_SIZE;
 
+#if defined(LW_UTIL_CPU_IS_64BIT)
     /* Limit the amount of associated data to make DER encoding easier */
     if (adlen >= 0x100000000ULL)
         return -2;
+#endif
 
     /* Initialize the Grain-128 stream cipher with the key and nonce */
     grain128_setup(&state, k, npub);

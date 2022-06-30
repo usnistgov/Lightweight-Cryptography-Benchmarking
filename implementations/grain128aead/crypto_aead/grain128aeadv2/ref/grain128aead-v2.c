@@ -1,5 +1,5 @@
 /*
- * The reference implementation of Grain128-AEAD.
+ * The reference implementation of Grain128-AEADv2.
  * 
  * Note that this implementation is *not* meant to be run in software.
  * It is written to be as close to a hardware implementation as possible,
@@ -10,13 +10,13 @@
  * the same test vectors.
  *
  * Jonathan Sönnerup
- * 2019
+ * 2021
  */
 
 #include <stdlib.h>
 #include <string.h>
 
-#include "grain128aead.h"
+#include "grain128aead-v2.h"
 
 unsigned char grain_round;
 
@@ -24,12 +24,25 @@ unsigned char swapsb(unsigned char n);
 
 void init_grain(grain_state *grain, const unsigned char *key, const unsigned char *iv)
 {
+	unsigned char key_bits[128];
+	unsigned char iv_bits[96];
+
 	// expand the packed bytes and place one bit per array cell (like a flip flop in HW)
+	for (int i = 0; i < 16; i++) {
+		for (int j = 0; j < 8; j++) {
+			key_bits[8 * i + j] = (key[i] & (1 << (7-j))) >> (7-j);
+		}
+	}
+	
 	for (int i = 0; i < 12; i++) {
 		for (int j = 0; j < 8; j++) {
-			grain->lfsr[8 * i + j] = (iv[i] & (1 << (7-j))) >> (7-j);
-
+			iv_bits[8 * i + j] = (iv[i] & (1 << (7-j))) >> (7-j);
 		}
+	}
+
+	/* set up LFSR */
+	for (int i = 0; i < 96; i++) {
+		grain->lfsr[i] = iv_bits[i];
 	}
 
 	for (int i = 96; i < 127; i++) {
@@ -38,10 +51,9 @@ void init_grain(grain_state *grain, const unsigned char *key, const unsigned cha
 
 	grain->lfsr[127] = 0;
 
-	for (int i = 0; i < 16; i++) {
-		for (int j = 0; j < 8; j++) {
-			grain->nfsr[8 * i + j] = (key[i] & (1 << (7-j))) >> (7-j);
-		}
+	/* set up NFSR */
+	for (int i = 0; i < 128; i++) {
+		grain->nfsr[i] = key_bits[i];
 	}
 
 	for (int i = 0; i < 64; i++) {
@@ -51,31 +63,29 @@ void init_grain(grain_state *grain, const unsigned char *key, const unsigned cha
 
 	/* initialize grain and skip output */
 	grain_round = INIT;
-	for (int i = 0; i < 256; i++) {
-		next_z(grain, 0);
+	for (int i = 0; i < 320; i++) {
+		next_z(grain, 0, 0);
 	}
 
 	grain_round = ADDKEY;
 
-	unsigned char key_idx = 0;
-	/* inititalize the accumulator and shift reg. using the first 64 bits */
-	for (int i = 0; i < 8; i++) {
-		for (int j = 0; j < 8; j++) {
-			unsigned char addkey_fb = (key[key_idx] & (1 << (7-j))) >> (7-j);
-			grain->auth_acc[8 * i + j] = next_z(grain, addkey_fb);
-		}
-		key_idx++;
-	}
-
-	for (int i = 0; i < 8; i++) {
-		for (int j = 0; j < 8; j++) {
-			unsigned char addkey_fb = (key[key_idx] & (1 << (7-j))) >> (7-j);
-			grain->auth_sr[8 * i + j] = next_z(grain, addkey_fb);
-		}
-		key_idx++;
+	/* re-introduce the key into LFSR and NFSR in parallel during the next 64 clocks */
+	for (int i = 0; i < 64; i++) {
+		unsigned char addkey_0 = key_bits[i];
+		unsigned char addkey_64 = key_bits[64 + i];
+		next_z(grain, addkey_0, addkey_64);
 	}
 
 	grain_round = NORMAL;
+
+	/* inititalize the accumulator and shift register */
+	for (int i = 0; i < 64; i++) {
+		grain->auth_acc[i] = next_z(grain, 0, 0);
+	}
+
+	for (int i = 0; i < 64; i++) {
+		grain->auth_sr[i] = next_z(grain, 0, 0);
+	}
 }
 
 void init_data(grain_data *data, const unsigned char *msg, unsigned long long msg_len)
@@ -151,7 +161,7 @@ void accumulate(grain_state *grain)
 	}
 }
 
-unsigned char next_z(grain_state *grain, unsigned char keybit)
+unsigned char next_z(grain_state *grain, unsigned char keybit, unsigned char keybit_64)
 {
 	unsigned char lfsr_fb = next_lfsr_fb(grain);
 	unsigned char nfsr_fb = next_nfsr_fb(grain);
@@ -174,8 +184,8 @@ unsigned char next_z(grain_state *grain, unsigned char keybit)
 		lfsr_out = shift(grain->lfsr, lfsr_fb ^ y);
 		shift(grain->nfsr, nfsr_fb ^ lfsr_out ^ y);
 	} else if (grain_round == ADDKEY) {
-		lfsr_out = shift(grain->lfsr, lfsr_fb ^ keybit);
-		shift(grain->nfsr, nfsr_fb ^ lfsr_out);
+		lfsr_out = shift(grain->lfsr, lfsr_fb ^ y ^ keybit_64);
+		shift(grain->nfsr, nfsr_fb ^ lfsr_out ^ y ^ keybit);
 	} else if (grain_round == NORMAL) {
 		lfsr_out = shift(grain->lfsr, lfsr_fb);
 		shift(grain->nfsr, nfsr_fb ^ lfsr_out);
@@ -277,7 +287,7 @@ int crypto_aead_encrypt(unsigned char *c, unsigned long long *clen,
 	for (unsigned long long i = 0; i < aderlen + adlen; i++) {
 		/* every second bit is used for keystream, the others for MAC */
 		for (int j = 0; j < 16; j++) {
-			unsigned char z_next = next_z(&grain, 0);
+			unsigned char z_next = next_z(&grain, 0, 0);
 			if (j % 2 == 0) {
 				// do not encrypt
 			} else {
@@ -303,7 +313,7 @@ int crypto_aead_encrypt(unsigned char *c, unsigned long long *clen,
 		// every second bit is used for keystream, the others for MAC
 		cc = 0;
 		for (int j = 0; j < 16; j++) {
-			unsigned char z_next = next_z(&grain, 0);
+			unsigned char z_next = next_z(&grain, 0, 0);
 			if (j % 2 == 0) {
 				// transform it back to 8 bits per byte
 				cc |= (data.message[m_cnt++] ^ z_next) << (7 - (c_cnt % 8));
@@ -320,7 +330,7 @@ int crypto_aead_encrypt(unsigned char *c, unsigned long long *clen,
 	}
 
 	// generate unused keystream bit
-	next_z(&grain, 0);
+	next_z(&grain, 0, 0);
 	// the 1 in the padding means accumulation
 	accumulate(&grain);
 
@@ -396,7 +406,7 @@ int crypto_aead_decrypt(
 	for (unsigned long long i = 0; i < aderlen + adlen; i++) {
 		/* every second bit is used for keystream, the others for MAC */
 		for (int j = 0; j < 16; j++) {
-			unsigned char z_next = next_z(&grain, 0);
+			unsigned char z_next = next_z(&grain, 0, 0);
 			if (j % 2 == 0) {
 				// do not encrypt
 			} else {
@@ -422,14 +432,14 @@ int crypto_aead_decrypt(
 		// every second bit is used for keystream, the others for MAC
 		msgbyte = 0;
 		for (int j = 0; j < 8; j++) {
-			unsigned char z_next = next_z(&grain, 0);
+			unsigned char z_next = next_z(&grain, 0, 0);
 			// decrypt ciphertext
 			msgbit = data.message[c_cnt] ^ z_next;
 			// transform it back to 8 bits per byte
 			msgbyte |= msgbit << (7 - (c_cnt % 8));
 
 			// generate accumulator bit
-			z_next = next_z(&grain, 0);
+			z_next = next_z(&grain, 0, 0);
 			// use the decrypted message bit to control accumulator
 			if (msgbit == 1) {
 				accumulate(&grain);
@@ -445,7 +455,7 @@ int crypto_aead_decrypt(
 
 
 	// generate unused keystream bit
-	next_z(&grain, 0);
+	next_z(&grain, 0, 0);
 	// the 1 in the padding means accumulation
 	accumulate(&grain);
 

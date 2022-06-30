@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2021 Southern Storm Software, Pty Ltd.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,6 +23,7 @@
 #ifndef LW_INTERNAL_UTIL_H
 #define LW_INTERNAL_UTIL_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 /* Figure out how to inline functions using this C compiler */
@@ -51,6 +52,13 @@
 /* Big endian */
 #else
 #error "Cannot determine the endianess of this platform"
+#endif
+
+/* Determine if we are compiling for a 64-bit CPU */
+#if defined(__x86_64) || defined(__x86_64__) || \
+    defined(__aarch64__) || defined(__ARM_ARCH_ISA_A64) || \
+    defined(_M_AMD64) || defined(_M_X64) || defined(_M_IA64)
+#define LW_UTIL_CPU_IS_64BIT 1
 #endif
 
 /* Helper macros to load and store values while converting endian-ness */
@@ -88,6 +96,11 @@
         (ptr)[2] = (uint8_t)(_x >> 16); \
         (ptr)[3] = (uint8_t)(_x >> 24); \
     } while (0)
+
+/* Reverses the bytes in a 32-bit word */
+#define reverse_word32(x) \
+    (((x) >> 24) | (((x) >> 8) & 0x0000FF00U) | \
+     (((x) << 8) & 0x00FF0000U) | ((x) << 24))
 
 /* Load a big-endian 64-bit word from a byte buffer */
 #define be_load_word64(ptr) \
@@ -698,5 +711,53 @@
 #define rightRotate5_8(a)  (rightRotate_8((a), 5))
 #define rightRotate6_8(a)  (rightRotate_8((a), 6))
 #define rightRotate7_8(a)  (rightRotate_8((a), 7))
+
+/**
+ * \brief Check an authentication tag in constant time.
+ *
+ * \param plaintext Points to the plaintext data.
+ * \param plaintext_len Length of the plaintext in bytes.
+ * \param tag1 First tag to compare.
+ * \param tag2 Second tag to compare.
+ * \param size Length of the tags in bytes.
+ *
+ * \return Returns -1 if the tag check failed or 0 if the check succeeded.
+ *
+ * If the tag check fails, then the \a plaintext will also be zeroed to
+ * prevent it from being used accidentally by the application when the
+ * ciphertext was invalid.
+ */
+int aead_check_tag
+    (unsigned char *plaintext, size_t plaintext_len,
+     const unsigned char *tag1, const unsigned char *tag2, size_t size);
+
+/**
+ * \brief Attempts to cleans a buffer that contains sensitive material.
+ *
+ * \param buf Points to the buffer to clear.
+ * \param size Size of the buffer to clear in bytes.
+ */
+void aead_clean(void *buf, unsigned size);
+
+/**
+ * \brief Number of bytes to retrieve from the system TRNG each time
+ * we need to reseed application-level PRNG's.
+ */
+#define AEAD_SYSTEM_SEED_SIZE 32
+
+/**
+ * \brief Gets data from the system TRNG to reseed application-level PRNG's.
+ *
+ * \param seed Points to the buffer to be populated with the system seed.
+ *
+ * \return Non-zero if \a seed has been filled with TRNG data or zero
+ * if there is no accessible TRNG on this system.
+ *
+ * The quality of the returned seed data may be very poor or may not
+ * distribute the entropy evenly throughout the returned \a seed buffer.
+ * The application should use a PRNG to hash the seed data into a more
+ * useful random sequence.
+ */
+int aead_random_get_system_seed(unsigned char seed[AEAD_SYSTEM_SEED_SIZE]);
 
 #endif

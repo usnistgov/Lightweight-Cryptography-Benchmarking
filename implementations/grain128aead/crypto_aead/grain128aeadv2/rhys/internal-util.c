@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2021 Southern Storm Software, Pty Ltd.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -20,12 +20,11 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "aead-common.h"
+#include "internal-util.h"
 
 int aead_check_tag
-    (unsigned char *plaintext, unsigned long long plaintext_len,
-     const unsigned char *tag1, const unsigned char *tag2,
-     unsigned size)
+    (unsigned char *plaintext, size_t plaintext_len,
+     const unsigned char *tag1, const unsigned char *tag2, size_t size)
 {
     /* Set "accum" to -1 if the tags match, or 0 if they don't match */
     int accum = 0;
@@ -45,25 +44,17 @@ int aead_check_tag
     return ~accum;
 }
 
-int aead_check_tag_precheck
-    (unsigned char *plaintext, unsigned long long plaintext_len,
-     const unsigned char *tag1, const unsigned char *tag2,
-     unsigned size, int precheck)
+void aead_clean(void *buf, unsigned size)
 {
-    /* Set "accum" to -1 if the tags match, or 0 if they don't match */
-    int accum = 0;
+    /* Force the use of volatile so that we actually clear the memory.
+     * Otherwise the compiler might optimise the entire contents of this
+     * function away, which will not be secure.
+     *
+     * Even this may not work.  Some platforms have bzero_explicit() or
+     * memset_s() that could be used in place of this implementation. */
+    volatile uint8_t *d = (volatile uint8_t *)buf;
     while (size > 0) {
-        accum |= (*tag1++ ^ *tag2++);
+        *d++ = 0;
         --size;
     }
-    accum = ((accum - 1) >> 8) & precheck;
-
-    /* Destroy the plaintext if the tag match failed */
-    while (plaintext_len > 0) {
-        *plaintext++ &= accum;
-        --plaintext_len;
-    }
-
-    /* If "accum" is 0, return -1, otherwise return 0 */
-    return ~accum;
 }

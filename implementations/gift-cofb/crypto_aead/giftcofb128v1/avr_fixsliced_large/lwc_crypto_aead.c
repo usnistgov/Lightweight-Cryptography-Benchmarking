@@ -3,8 +3,8 @@
 
 
 aead_ctx lwc_aead_cipher = {
-	"grain128aead",
-	"opt32",
+	"giftcofb128v1",
+	"avr_fixsliced_large",
 	CRYPTO_KEYBYTES,
 	CRYPTO_NPUBBYTES,
 	CRYPTO_ABYTES,

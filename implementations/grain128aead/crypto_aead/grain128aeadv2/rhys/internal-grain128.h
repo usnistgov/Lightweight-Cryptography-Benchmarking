@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2021 Southern Storm Software, Pty Ltd.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -92,7 +92,7 @@ void grain128_setup
  */
 void grain128_authenticate
     (grain128_state_t *state, const unsigned char *data,
-     unsigned long long len);
+     size_t len);
 
 /**
  * \brief Encrypts and authenticates data with Grain-128.
@@ -104,7 +104,7 @@ void grain128_authenticate
  */
 void grain128_encrypt
     (grain128_state_t *state, unsigned char *c, const unsigned char *m,
-     unsigned long long len);
+     size_t len);
 
 /**
  * \brief Decrypts and authenticates data with Grain-128.
@@ -116,7 +116,7 @@ void grain128_encrypt
  */
 void grain128_decrypt
     (grain128_state_t *state, unsigned char *m, const unsigned char *c,
-     unsigned long long len);
+     size_t len);
 
 /**
  * \brief Computes the final authentiation tag.

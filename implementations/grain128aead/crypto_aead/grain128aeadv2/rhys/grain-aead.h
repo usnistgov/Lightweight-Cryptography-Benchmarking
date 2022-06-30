@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2021 Southern Storm Software, Pty Ltd.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -20,13 +20,13 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef LWCRYPTO_GRAIN128_H
-#define LWCRYPTO_GRAIN128_H
+#ifndef LWCRYPTO_GRAIN_AEAD_H
+#define LWCRYPTO_GRAIN_AEAD_H
 
-#include "aead-common.h"
+#include <stddef.h>
 
 /**
- * \file grain128.h
+ * \file grain-aead.h
  * \brief Grain-128AEAD authenticated encryption algorithm.
  *
  * Grain-128AEAD is an authenticated encryption algorithm based around a
@@ -57,11 +57,6 @@ extern "C" {
 #define GRAIN128_NONCE_SIZE 12
 
 /**
- * \brief Meta-information block for the Grain-128AEAD cipher.
- */
-extern aead_cipher_t const grain128_aead_cipher;
-
-/**
  * \brief Encrypts and authenticates a packet with Grain-128AEAD.
  *
  * \param c Buffer to receive the output.
@@ -72,7 +67,6 @@ extern aead_cipher_t const grain128_aead_cipher;
  * \param ad Buffer that contains associated data to authenticate
  * along with the packet but which does not need to be encrypted.
  * \param adlen Length of the associated data in bytes.
- * \param nsec Secret nonce - not used by this algorithm.
  * \param npub Points to the public nonce for the packet which must
  * be 12 bytes in length.
  * \param k Points to the 16 bytes of the key to use to encrypt the packet.
@@ -83,10 +77,9 @@ extern aead_cipher_t const grain128_aead_cipher;
  * \sa grain128_aead_decrypt()
  */
 int grain128_aead_encrypt
-    (unsigned char *c, unsigned long long *clen,
-     const unsigned char *m, unsigned long long mlen,
-     const unsigned char *ad, unsigned long long adlen,
-     const unsigned char *nsec,
+    (unsigned char *c, size_t *clen,
+     const unsigned char *m, size_t mlen,
+     const unsigned char *ad, size_t adlen,
      const unsigned char *npub,
      const unsigned char *k);
 
@@ -95,7 +88,6 @@ int grain128_aead_encrypt
  *
  * \param m Buffer to receive the plaintext message on output.
  * \param mlen Receives the length of the plaintext message on output.
- * \param nsec Secret nonce - not used by this algorithm.
  * \param c Buffer that contains the ciphertext and authentication
  * tag to decrypt.
  * \param clen Length of the input data in bytes, which includes the
@@ -113,10 +105,9 @@ int grain128_aead_encrypt
  * \sa grain128_aead_encrypt()
  */
 int grain128_aead_decrypt
-    (unsigned char *m, unsigned long long *mlen,
-     unsigned char *nsec,
-     const unsigned char *c, unsigned long long clen,
-     const unsigned char *ad, unsigned long long adlen,
+    (unsigned char *m, size_t *mlen,
+     const unsigned char *c, size_t clen,
+     const unsigned char *ad, size_t adlen,
      const unsigned char *npub,
      const unsigned char *k);
 

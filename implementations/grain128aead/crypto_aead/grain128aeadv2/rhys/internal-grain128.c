@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2021 Southern Storm Software, Pty Ltd.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,11 +22,29 @@
 
 #include "internal-grain128.h"
 
+/* Determine which primitives should be accelerated with assembly code */
+#if defined(__AVR__)
+#define GRAIN128_ASM_CORE 1
+#define GRAIN128_ASM_PREOUTPUT 1
+#define GRAIN128_ASM_KEYSTREAM 0
+#define GRAIN128_ASM_HELPERS 1
+#elif defined(__ARM_ARCH_ISA_THUMB) && __ARM_ARCH == 7
+#define GRAIN128_ASM_CORE 1
+#define GRAIN128_ASM_PREOUTPUT 1
+#define GRAIN128_ASM_KEYSTREAM 1
+#define GRAIN128_ASM_HELPERS 0
+#else
+#define GRAIN128_ASM_CORE 0
+#define GRAIN128_ASM_PREOUTPUT 0
+#define GRAIN128_ASM_KEYSTREAM 0
+#define GRAIN128_ASM_HELPERS 0
+#endif
+
 /* Extracts 32 bits from the Grain state that are not word-aligned */
 #define GWORD(a, b, start_bit) \
         (((a) << ((start_bit) % 32)) ^ ((b) >> (32 - ((start_bit) % 32))))
 
-#if !defined(__AVR__)
+#if !GRAIN128_ASM_CORE
 
 void grain128_core
     (grain128_state_t *state, uint32_t x, uint32_t x2)
@@ -101,19 +119,11 @@ void grain128_core
     state->nfsr[3] = x2;
 }
 
-#define grain128_preoutput grain128_preoutput_inner
-#define grain128_preoutput_setup(state) grain128_preoutput((state))
+#endif /* !GRAIN128_ASM_CORE */
 
-#else /* __AVR__ */
+#if !GRAIN128_ASM_PREOUTPUT
 
-/* For some reason, the AVR assembly preoutput doesn't work for key setup
- * but does work everywhere else.  Investigate and fix this later. */
-uint32_t grain128_preoutput(const grain128_state_t *state);
-#define grain128_preoutput_setup(state) grain128_preoutput_inner((state))
-
-#endif /* __AVR__ */
-
-uint32_t grain128_preoutput_inner(const grain128_state_t *state)
+uint32_t grain128_preoutput(const grain128_state_t *state)
 {
     uint32_t s0, s1, s2, s3;
     uint32_t b0, b1, b2, b3;
@@ -156,6 +166,8 @@ uint32_t grain128_preoutput_inner(const grain128_state_t *state)
     return y;
 }
 
+#endif /* !GRAIN128_ASM_PREOUTPUT */
+
 /* http://programming.sirrida.de/perm_fn.html#bit_permute_step */
 #define bit_permute_step(_y, mask, shift) \
     do { \
@@ -170,11 +182,7 @@ uint32_t grain128_preoutput_inner(const grain128_state_t *state)
         (_y) = (((_y) & (mask)) << (shift)) | (((_y) >> (shift)) & (mask)); \
     } while (0)
 
-#if defined(__AVR__)
-#define GRAIN128_ASM_HELPERS 1
-#endif
-
-#if defined(GRAIN128_ASM_HELPERS)
+#if GRAIN128_ASM_HELPERS
 
 /**
  * \brief Loads a 32-bit word and swaps it from big-endian bit order
@@ -200,6 +208,7 @@ void grain128_setup
      const unsigned char *nonce)
 {
     uint32_t k[4];
+    uint32_t y;
     uint8_t round;
 
     /* Internally, the Grain-128 stream cipher uses big endian bit
@@ -212,7 +221,7 @@ void grain128_setup
      * P = [7 6 5 4 3 2 1 0 15 14 13 12 11 10 9 8
      *      23 22 21 20 19 18 17 16 31 30 29 28 27 26 25 24]
      */
-    #if defined(GRAIN128_ASM_HELPERS)
+    #if GRAIN128_ASM_HELPERS
     #define SWAP_BITS(out, in) \
         do { \
             (out) = grain128_swap_word32((in)); \
@@ -244,27 +253,39 @@ void grain128_setup
     state->nfsr[2] = k[2];
     state->nfsr[3] = k[3];
 
-    /* Perform 256 rounds of Grain-128 to mix up the initial state.
-     * The rounds can be performed 32 at a time: 32 * 8 = 256 */
-    for (round = 0; round < 8; ++round) {
-        uint32_t y = grain128_preoutput_setup(state);
+    /* Perform 320 rounds of Grain-128 to mix up the initial state.
+     * The rounds can be performed 32 at a time: 32 * 10 = 320 */
+    for (round = 0; round < 10; ++round) {
+        y = grain128_preoutput(state);
         grain128_core(state, y, y);
     }
 
-    /* Absorb the key into the state again and generate the initial
-     * state of the accumulator and the shift register */
+    /* Re-introduce the key into the LFSR and NFSR state */
+    y = grain128_preoutput(state);
+    grain128_core(state, y ^ k[2], y ^ k[0]);
+    y = grain128_preoutput(state);
+    grain128_core(state, y ^ k[3], y ^ k[1]);
+
+    /* Generate the initial state of the accumulator and the shift register */
     state->accum = ((uint64_t)(grain128_preoutput(state))) << 32;
-    grain128_core(state, k[0], 0);
+    grain128_core(state, 0, 0);
     state->accum |= grain128_preoutput(state);
-    grain128_core(state, k[1], 0);
+    grain128_core(state, 0, 0);
     state->sr = ((uint64_t)(grain128_preoutput(state))) << 32;
-    grain128_core(state, k[2], 0);
+    grain128_core(state, 0, 0);
     state->sr |= grain128_preoutput(state);
-    grain128_core(state, k[3], 0);
+    grain128_core(state, 0, 0);
 
     /* No keystream data has been generated yet */
     state->posn = sizeof(state->ks);
 }
+
+#if GRAIN128_ASM_KEYSTREAM
+
+/* Unrolled assembly version of grain128_next_keystream() is available */
+void grain128_next_keystream(grain128_state_t *state);
+
+#else /* !GRAIN128_ASM_KEYSTREAM */
 
 /**
  * \brief Generates the next 16 byte block of keystream output data.
@@ -273,7 +294,7 @@ void grain128_setup
  */
 static void grain128_next_keystream(grain128_state_t *state)
 {
-#if !defined(GRAIN128_ASM_HELPERS)
+#if !GRAIN128_ASM_HELPERS
     unsigned posn;
     for (posn = 0; posn < sizeof(state->ks); posn += 4) {
         /* Get the next word of pre-output and run the Grain-128 core */
@@ -309,9 +330,11 @@ static void grain128_next_keystream(grain128_state_t *state)
 #endif
 }
 
+#endif /* !GRAIN128_ASM_KEYSTREAM */
+
 void grain128_authenticate
     (grain128_state_t *state, const unsigned char *data,
-     unsigned long long len)
+     size_t len)
 {
     unsigned char abyte;
     unsigned char sbyte;
@@ -352,7 +375,7 @@ void grain128_authenticate
 
 void grain128_encrypt
     (grain128_state_t *state, unsigned char *c, const unsigned char *m,
-     unsigned long long len)
+     size_t len)
 {
     unsigned char mbyte;
     unsigned char sbyte;
@@ -395,7 +418,7 @@ void grain128_encrypt
 
 void grain128_decrypt
     (grain128_state_t *state, unsigned char *m, const unsigned char *c,
-     unsigned long long len)
+     size_t len)
 {
     unsigned char mbyte;
     unsigned char sbyte;

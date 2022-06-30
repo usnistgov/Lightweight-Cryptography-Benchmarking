@@ -3,7 +3,7 @@
 
 
 aead_ctx lwc_aead_cipher = {
-	"grain128aead",
+	"grain128aeadv2",
 	"ref",
 	CRYPTO_KEYBYTES,
 	CRYPTO_NPUBBYTES,

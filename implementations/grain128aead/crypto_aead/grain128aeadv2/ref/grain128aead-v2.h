@@ -24,7 +24,7 @@ unsigned char next_nfsr_fb(grain_state *grain);
 unsigned char next_h(grain_state *grain);
 unsigned char shift(unsigned char fsr[128], unsigned char fb);
 void auth_shift(unsigned char sr[32], unsigned char fb);
-unsigned char next_z(grain_state *grain, unsigned char);
+unsigned char next_z(grain_state *grain, unsigned char, unsigned char);
 void generate_keystream(grain_state *grain, grain_data *data, unsigned char *);
 int encode_der(unsigned long long, unsigned char **);
 
