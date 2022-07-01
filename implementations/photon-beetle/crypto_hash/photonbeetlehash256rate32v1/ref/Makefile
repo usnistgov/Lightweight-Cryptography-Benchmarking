@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGES=-std=c99 -Wall -Wextra -Wshadow -fsanitize=address,undefined -O2
-OBJS=genkat_hash.o hash.o photon.o
+CFLAGES=-std=c99 -Wall -Wextra -Wshadow -fsanitize=address,undefined -static-libasan -fuse-ld=gold -O2
+OBJS=genkat_hash.o photon.o hash.o
 
 all: ref
 

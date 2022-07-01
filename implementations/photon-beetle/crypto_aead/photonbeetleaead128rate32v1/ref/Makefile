@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGES=-std=c99 -Wall -Wextra -Wshadow -fsanitize=address,undefined -O2
+CFLAGES=-std=c99 -Wall -Wextra -Wshadow -fsanitize=address,undefined -static-libasan -O2
 OBJS=genkat_aead.o photon.o encrypt.o
 
 all: ref
