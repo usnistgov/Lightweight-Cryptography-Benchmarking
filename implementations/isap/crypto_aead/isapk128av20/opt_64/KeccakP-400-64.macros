@@ -1,0 +1,287 @@
+typedef unsigned char UINT8;
+typedef unsigned short UINT16;
+typedef unsigned long long UINT64;
+
+static const UINT16 KeccakF400RoundConstants[20] = {
+    0x0001,
+    0x8082,
+    0x808a,
+    0x8000,
+    0x808b,
+    0x0001,
+    0x8081,
+    0x8009,
+    0x008a,
+    0x0088,
+    0x8009,
+    0x000a,
+    0x808b,
+    0x008b,
+    0x8089,
+    0x8003,
+    0x8002,
+    0x0080,
+    0x800a,
+    0x000a,
+};
+
+#define ROL16(a, offset) ((((UINT16)a) << offset) ^ (((UINT16)a) >> (16-offset)))
+
+#define declareABCDEX \
+    union State S; \
+    UINT16 Bba, Bbe, Bbi, Bbo, Bbu; \
+    UINT16 Bga, Bge, Bgi, Bgo, Bgu; \
+    UINT16 Bka, Bke, Bki, Bko, Bku; \
+    UINT16 Bma, Bme, Bmi, Bmo, Bmu; \
+    UINT16 Bsa, Bse, Bsi, Bso, Bsu; \
+    UINT16 Ca, Ce, Ci, Co, Cu; \
+    UINT16 Da, De, Di, Do, Du; \
+    UINT16 Eba, Ebe, Ebi, Ebo, Ebu; \
+    UINT16 Ega, Ege, Egi, Ego, Egu; \
+    UINT16 Eka, Eke, Eki, Eko, Eku; \
+    UINT16 Ema, Eme, Emi, Emo, Emu; \
+    UINT16 Esa, Ese, Esi, Eso, Esu; \
+
+#define prepareThetaX \
+    Ca = S.X.Aba^S.X.Aga^S.X.Aka^S.X.Ama^S.X.Asa; \
+    Ce = S.X.Abe^S.X.Age^S.X.Ake^S.X.Ame^S.X.Ase; \
+    Ci = S.X.Abi^S.X.Agi^S.X.Aki^S.X.Ami^S.X.Asi; \
+    Co = S.X.Abo^S.X.Ago^S.X.Ako^S.X.Amo^S.X.Aso; \
+    Cu = S.X.Abu^S.X.Agu^S.X.Aku^S.X.Amu^S.X.Asu; \
+
+/* --- Code for round, with prepare-theta */
+/* --- 64-bit lanes mapped to 64-bit words */
+#define thetaRhoPiChiIotaPrepareTheta(i, A, E) \
+    Da = Cu^ROL16(Ce, 1); \
+    De = Ca^ROL16(Ci, 1); \
+    Di = Ce^ROL16(Co, 1); \
+    Do = Ci^ROL16(Cu, 1); \
+    Du = Co^ROL16(Ca, 1); \
+\
+    A##ba ^= Da; \
+    Bba = A##ba; \
+    A##ge ^= De; \
+    Bbe = ROL16(A##ge, 12); \
+    A##ki ^= Di; \
+    Bbi = ROL16(A##ki, 11); \
+    A##mo ^= Do; \
+    Bbo = ROL16(A##mo, 5); \
+    A##su ^= Du; \
+    Bbu = ROL16(A##su, 14); \
+    E##ba =   Bba ^((~Bbe)&  Bbi ); \
+    E##ba ^= KeccakF400RoundConstants[i]; \
+    Ca = E##ba; \
+    E##be =   Bbe ^((~Bbi)&  Bbo ); \
+    Ce = E##be; \
+    E##bi =   Bbi ^((~Bbo)&  Bbu ); \
+    Ci = E##bi; \
+    E##bo =   Bbo ^((~Bbu)&  Bba ); \
+    Co = E##bo; \
+    E##bu =   Bbu ^((~Bba)&  Bbe ); \
+    Cu = E##bu; \
+\
+    A##bo ^= Do; \
+    Bga = ROL16(A##bo, 12); \
+    A##gu ^= Du; \
+    Bge = ROL16(A##gu, 4); \
+    A##ka ^= Da; \
+    Bgi = ROL16(A##ka, 3); \
+    A##me ^= De; \
+    Bgo = ROL16(A##me, 13); \
+    A##si ^= Di; \
+    Bgu = ROL16(A##si, 13); \
+    E##ga =   Bga ^((~Bge)&  Bgi ); \
+    Ca ^= E##ga; \
+    E##ge =   Bge ^((~Bgi)&  Bgo ); \
+    Ce ^= E##ge; \
+    E##gi =   Bgi ^((~Bgo)&  Bgu ); \
+    Ci ^= E##gi; \
+    E##go =   Bgo ^((~Bgu)&  Bga ); \
+    Co ^= E##go; \
+    E##gu =   Bgu ^((~Bga)&  Bge ); \
+    Cu ^= E##gu; \
+\
+    A##be ^= De; \
+    Bka = ROL16(A##be, 1); \
+    A##gi ^= Di; \
+    Bke = ROL16(A##gi, 6); \
+    A##ko ^= Do; \
+    Bki = ROL16(A##ko, 9); \
+    A##mu ^= Du; \
+    Bko = ROL16(A##mu, 8); \
+    A##sa ^= Da; \
+    Bku = ROL16(A##sa, 2); \
+    E##ka =   Bka ^((~Bke)&  Bki ); \
+    Ca ^= E##ka; \
+    E##ke =   Bke ^((~Bki)&  Bko ); \
+    Ce ^= E##ke; \
+    E##ki =   Bki ^((~Bko)&  Bku ); \
+    Ci ^= E##ki; \
+    E##ko =   Bko ^((~Bku)&  Bka ); \
+    Co ^= E##ko; \
+    E##ku =   Bku ^((~Bka)&  Bke ); \
+    Cu ^= E##ku; \
+\
+    A##bu ^= Du; \
+    Bma = ROL16(A##bu, 11); \
+    A##ga ^= Da; \
+    Bme = ROL16(A##ga, 4); \
+    A##ke ^= De; \
+    Bmi = ROL16(A##ke, 10); \
+    A##mi ^= Di; \
+    Bmo = ROL16(A##mi, 15); \
+    A##so ^= Do; \
+    Bmu = ROL16(A##so, 8); \
+    E##ma =   Bma ^((~Bme)&  Bmi ); \
+    Ca ^= E##ma; \
+    E##me =   Bme ^((~Bmi)&  Bmo ); \
+    Ce ^= E##me; \
+    E##mi =   Bmi ^((~Bmo)&  Bmu ); \
+    Ci ^= E##mi; \
+    E##mo =   Bmo ^((~Bmu)&  Bma ); \
+    Co ^= E##mo; \
+    E##mu =   Bmu ^((~Bma)&  Bme ); \
+    Cu ^= E##mu; \
+\
+    A##bi ^= Di; \
+    Bsa = ROL16(A##bi, 14); \
+    A##go ^= Do; \
+    Bse = ROL16(A##go, 7); \
+    A##ku ^= Du; \
+    Bsi = ROL16(A##ku, 7); \
+    A##ma ^= Da; \
+    Bso = ROL16(A##ma, 9); \
+    A##se ^= De; \
+    Bsu = ROL16(A##se, 2); \
+    E##sa =   Bsa ^((~Bse)&  Bsi ); \
+    Ca ^= E##sa; \
+    E##se =   Bse ^((~Bsi)&  Bso ); \
+    Ce ^= E##se; \
+    E##si =   Bsi ^((~Bso)&  Bsu ); \
+    Ci ^= E##si; \
+    E##so =   Bso ^((~Bsu)&  Bsa ); \
+    Co ^= E##so; \
+    E##su =   Bsu ^((~Bsa)&  Bse ); \
+    Cu ^= E##su; \
+\
+
+/* --- Code for round */
+/* --- 64-bit lanes mapped to 64-bit words */
+#define thetaRhoPiChiIota(i, A, E) \
+    Da = Cu^ROL16(Ce, 1); \
+    De = Ca^ROL16(Ci, 1); \
+    Di = Ce^ROL16(Co, 1); \
+    Do = Ci^ROL16(Cu, 1); \
+    Du = Co^ROL16(Ca, 1); \
+\
+    A##ba ^= Da; \
+    Bba = A##ba; \
+    A##ge ^= De; \
+    Bbe = ROL16(A##ge, 12); \
+    A##ki ^= Di; \
+    Bbi = ROL16(A##ki, 11); \
+    A##mo ^= Do; \
+    Bbo = ROL16(A##mo, 5); \
+    A##su ^= Du; \
+    Bbu = ROL16(A##su, 14); \
+    E##ba =   Bba ^((~Bbe)&  Bbi ); \
+    E##ba ^= KeccakF400RoundConstants[i]; \
+    E##be =   Bbe ^((~Bbi)&  Bbo ); \
+    E##bi =   Bbi ^((~Bbo)&  Bbu ); \
+    E##bo =   Bbo ^((~Bbu)&  Bba ); \
+    E##bu =   Bbu ^((~Bba)&  Bbe ); \
+\
+    A##bo ^= Do; \
+    Bga = ROL16(A##bo, 12); \
+    A##gu ^= Du; \
+    Bge = ROL16(A##gu, 4); \
+    A##ka ^= Da; \
+    Bgi = ROL16(A##ka, 3); \
+    A##me ^= De; \
+    Bgo = ROL16(A##me, 13); \
+    A##si ^= Di; \
+    Bgu = ROL16(A##si, 13); \
+    E##ga =   Bga ^((~Bge)&  Bgi ); \
+    E##ge =   Bge ^((~Bgi)&  Bgo ); \
+    E##gi =   Bgi ^((~Bgo)&  Bgu ); \
+    E##go =   Bgo ^((~Bgu)&  Bga ); \
+    E##gu =   Bgu ^((~Bga)&  Bge ); \
+\
+    A##be ^= De; \
+    Bka = ROL16(A##be, 1); \
+    A##gi ^= Di; \
+    Bke = ROL16(A##gi, 6); \
+    A##ko ^= Do; \
+    Bki = ROL16(A##ko, 9); \
+    A##mu ^= Du; \
+    Bko = ROL16(A##mu, 8); \
+    A##sa ^= Da; \
+    Bku = ROL16(A##sa, 2); \
+    E##ka =   Bka ^((~Bke)&  Bki ); \
+    E##ke =   Bke ^((~Bki)&  Bko ); \
+    E##ki =   Bki ^((~Bko)&  Bku ); \
+    E##ko =   Bko ^((~Bku)&  Bka ); \
+    E##ku =   Bku ^((~Bka)&  Bke ); \
+\
+    A##bu ^= Du; \
+    Bma = ROL16(A##bu, 11); \
+    A##ga ^= Da; \
+    Bme = ROL16(A##ga, 4); \
+    A##ke ^= De; \
+    Bmi = ROL16(A##ke, 10); \
+    A##mi ^= Di; \
+    Bmo = ROL16(A##mi, 15); \
+    A##so ^= Do; \
+    Bmu = ROL16(A##so, 8); \
+    E##ma =   Bma ^((~Bme)&  Bmi ); \
+    E##me =   Bme ^((~Bmi)&  Bmo ); \
+    E##mi =   Bmi ^((~Bmo)&  Bmu ); \
+    E##mo =   Bmo ^((~Bmu)&  Bma ); \
+    E##mu =   Bmu ^((~Bma)&  Bme ); \
+\
+    A##bi ^= Di; \
+    Bsa = ROL16(A##bi, 14); \
+    A##go ^= Do; \
+    Bse = ROL16(A##go, 7); \
+    A##ku ^= Du; \
+    Bsi = ROL16(A##ku, 7); \
+    A##ma ^= Da; \
+    Bso = ROL16(A##ma, 9); \
+    A##se ^= De; \
+    Bsu = ROL16(A##se, 2); \
+    E##sa =   Bsa ^((~Bse)&  Bsi ); \
+    E##se =   Bse ^((~Bsi)&  Bso ); \
+    E##si =   Bsi ^((~Bso)&  Bsu ); \
+    E##so =   Bso ^((~Bsu)&  Bsa ); \
+    E##su =   Bsu ^((~Bsa)&  Bse ); \
+\
+
+#define copyStateVariables(X, Y) \
+    X##ba = Y##ba; \
+    X##be = Y##be; \
+    X##bi = Y##bi; \
+    X##bo = Y##bo; \
+    X##bu = Y##bu; \
+    X##ga = Y##ga; \
+    X##ge = Y##ge; \
+    X##gi = Y##gi; \
+    X##go = Y##go; \
+    X##gu = Y##gu; \
+    X##ka = Y##ka; \
+    X##ke = Y##ke; \
+    X##ki = Y##ki; \
+    X##ko = Y##ko; \
+    X##ku = Y##ku; \
+    X##ma = Y##ma; \
+    X##me = Y##me; \
+    X##mi = Y##mi; \
+    X##mo = Y##mo; \
+    X##mu = Y##mu; \
+    X##sa = Y##sa; \
+    X##se = Y##se; \
+    X##si = Y##si; \
+    X##so = Y##so; \
+    X##su = Y##su; \
+\
+
+// prevent "warning: backslash-newline at end of file"

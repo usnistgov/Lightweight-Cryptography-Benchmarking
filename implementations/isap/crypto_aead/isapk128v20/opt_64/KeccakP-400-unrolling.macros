@@ -1,0 +1,74 @@
+#define rounds20X \
+    prepareThetaX \
+    thetaRhoPiChiIotaPrepareTheta( 0, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 1, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta( 2, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 3, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta( 4, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 5, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta( 6, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 7, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta( 8, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 9, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(10, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(11, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(12, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(13, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(14, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(15, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(16, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(17, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(18, S.X.A, E) \
+    thetaRhoPiChiIota(19, E, S.X.A) \
+
+#define rounds16X \
+    prepareThetaX \
+    thetaRhoPiChiIotaPrepareTheta( 4, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 5, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta( 6, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 7, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta( 8, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 9, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(10, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(11, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(12, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(13, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(14, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(15, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(16, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(17, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(18, S.X.A, E) \
+    thetaRhoPiChiIota(19, E, S.X.A) \
+
+#define rounds12X \
+    prepareThetaX \
+    thetaRhoPiChiIotaPrepareTheta( 8, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta( 9, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(10, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(11, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(12, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(13, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(14, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(15, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(16, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(17, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(18, S.X.A, E) \
+    thetaRhoPiChiIota(19, E, S.X.A) \
+
+#define rounds8X \
+    prepareThetaX \
+    thetaRhoPiChiIotaPrepareTheta(12, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(13, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(14, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(15, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(16, S.X.A, E) \
+    thetaRhoPiChiIotaPrepareTheta(17, E, S.X.A) \
+    thetaRhoPiChiIotaPrepareTheta(18, S.X.A, E) \
+    thetaRhoPiChiIota(19, E, S.X.A) \
+
+#define rounds1X \
+    prepareThetaX \
+    thetaRhoPiChiIotaPrepareTheta(19, S.X.A, E) \
+    copyStateVariables(S.X.A, E) \
+
+// prevent "warning: backslash-newline at end of file"
