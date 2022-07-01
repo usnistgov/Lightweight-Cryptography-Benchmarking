@@ -1,0 +1,19 @@
+Cortex-m3
+
+ -mcpu=cortex-m3
+ -mthumb
+ -mfloat-abi=soft
+ -O3
+
+Cortex-m4
+
+ -mcpu=cortex-m4
+ -mthumb
+ -mfloat-abi=hard
+ -mfpu=fpv4-sp-d16
+ -O3
+
+ * If you want to use SIMD
+ -DSTM32F4
+
+- end of file -
