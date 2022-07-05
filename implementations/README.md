@@ -1,19 +1,15 @@
-This folder contains the implementations of Round 2 candidates collected from the submission packages and following repositories:
+This folder contains implementations collected from the submission packages and the following repositories:
 
- - https://github.com/nerilex/arm-crypto-lib
- - https://github.com/aadomn/skinny
- - https://github.com/ArneDeprez1/ForkAE-SW
  - https://github.com/ascon/ascon-c
- - https://github.com/sebastien-riou/DryGASCON
+ - https://github.com/aadomn/gift
  - https://github.com/TimBeyne/Elephant
+ - https://github.com/romulusae/romulus
+ - https://lab.las3.de/gitlab/lwc/candidates
+ - https://github.com/rweather/lwc-finalists
+ - https://github.com/nerilex/arm-crypto-lib	
  - https://github.com/cryptolu/FELICS
  - https://github.com/ARMmbed/mbedtls
  - https://nacl.cr.yp.to/
- - https://lab.las3.de/gitlab/lwc/candidates
- - https://github.com/rweather/lightweight-crypto
-	
-
-The implementations have been updated on: **2 December 2020**.
 
 ## Directory structure
 
@@ -30,6 +26,10 @@ The directory structure of the implementations is as follows:
             - [impl2]
     - crypto_hash
         - [hash_variant1]
+            - [impl1]
+            - [impl2]
+    - crypto_aead_hash
+        - [aead_hash_variant1]
             - [impl1]
             - [impl2]
 ```

@@ -8,7 +8,7 @@ This repository hosts the benchmarking framework used to evaluate the software p
 
 # Implementations
 
-More information on implementations can be found [here](implementations/).
+More information on implementations can be found [here](implementations/). Please note that this repository only includes implementations that have successfully passed known answer tests on at least one of the test platforms listed below.
 
 # Platforms
 
