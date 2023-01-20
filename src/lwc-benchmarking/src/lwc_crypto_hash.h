@@ -57,4 +57,4 @@ int crypto_hash(unsigned char* out,
 }
 #endif
 
-#endif // LWC_CRYPTO_AEAD_H
+#endif // LWC_CRYPTO_HASH_H

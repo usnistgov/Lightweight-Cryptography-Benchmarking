@@ -34,7 +34,6 @@
 
 #ifdef LWC_PLATFORM_MKRZERO
 
-#include "delay.h"
 
 class timer_cycles {
 

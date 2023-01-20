@@ -31,14 +31,19 @@
 
 #!/bin/bash
 
+# Select appropriate extension for PlatformIO executable
+EXT=".exe" # Windows
+#EXT="" # Mac, Linux
+
+
 # Target platform names
-platform_list=("mkrzero uno nano33ble nano_every nodemcuv2 chipkit_mx3")
+platform_list=("mkrzero uno nano33ble nano_every nodemcuv2 chipkit_mx3 dueUSB")
 
 # List of experiments to be performed
 experiment_list=("size kat timing")
 
 # The type of algorithms to process
-primitive_folder_list=("crypto_aead crypto_hash")
+primitive_folder_list=("crypto_aead crypto_hash crypto_aead_hash")
 
 # The list of submission names to be omitted from processing
 skip_submission=("")
@@ -61,8 +66,8 @@ impl_folder="$base_folder/../../implementations"
 # We have to provide a dummy entry for hash functionality even though hash implementations do not have different functionalities.
 # Note: The mode names when prepended by "LWC_MODE_USE_" must match a predefined mode of operation
 aead_modes=("AEAD_ENCRYPT AEAD_DECRYPT AEAD_BOTH")
-#aead_modes=("AEAD_BOTH")
 hash_modes=("HASH")
+combined_modes=("COMBINED_AEAD_ENCRYPT COMBINED_AEAD_DECRYPT COMBINED_AEAD_BOTH")
 
 # String searched in serial output indicating the end of program
 eof_marker="# lwc exit"
@@ -82,19 +87,19 @@ function includes() {
 # Outputs the argument to console in green color
 function print_info() {
 
-	echo -e "\e[1;32m$@" "\x1b[0m"
+	echo -e "$@" "\x1b[0m"
 }
 
 # Outputs the argument to console in yellow color
 function print_warning() {
 
-	echo -e "\e[1;33m$@" "\x1b[0m"
+	echo -e "$@" "\x1b[0m"
 }
 
 # Outputs the argument to console in red color
 function print_error() {
 
-	echo -e "\e[1;31m$@" "\x1b[0m"
+	echo -e "$@" "\x1b[0m"
 }
 
 # Stop watch timer
@@ -135,6 +140,13 @@ function wait_eof_marker() {
 #
 function verify_kat() {
 
+#	configs=$(echo $target-release-o2)
+
+    if [ $variant == "empty_aead" ] && [ "$variant" == "empty_hash" ] && [ "$variant" == "empty_aead_hash" ]; then
+        echo "skipping KAT for variant $variant"
+        return 0
+    fi
+
 	results_file="$out_folder/kat_results.txt"
 
 	print_info "+verify_kat_$prim($submission, $variant, $impl)"
@@ -172,28 +184,40 @@ function verify_kat() {
 
 				# Update mode header file
 				echo $lwc_mode_genkat > src/lwc_mode.h
+                echo $lwc_mode_genkat
 
 				print_info "building implementation $impl with config $conf"
-				platformio.exe run --verbose --environment $conf > $buildout 2> $builderr
+				platformio$EXT run --verbose --environment $conf > $buildout 2> $builderr
 
 				if [[ "$?" -ne 0 ]]; then
 					print_error "build failed for $submission, $variant, $impl, $conf"
 					printf ",kat_err_build" >> $results_file
 				else
 
-					stop_watch "uploading" 3
-					platformio.exe run --verbose --target upload --environment $conf > $temp_folder/upload_out.txt 2> $temp_folder/upload_err.txt
-					sleep 3s
-					platformio.exe device monitor > $outfile& 2> $temp_folder/serial_err.txt
-					PID=$!
+                    if [[ "$EXT" == ".exe" ]]; then
+                        stop_watch "uploading" 3
+                        platformio$EXT run --verbose --target upload --environment $conf > $temp_folder/upload_out.txt 2> $temp_folder/upload_err.txt
+                        sleep 3s
+                        platformio$EXT device monitor > $outfile& 2> $temp_folder/serial_err.txt
+                        PID=$!
 
-					wait_eof_marker
+                        wait_eof_marker
 						
-					kill -9 $PID
+                        kill -9 $PID
+                    else
+                        stop_watch "uploading" 3
+                        platformio$EXT run --verbose --target upload --environment $conf > $temp_folder/upload_out.txt 2> $temp_folder/upload_err.txt
+                        sleep 3s
+                        platformio$EXT device monitor --filter log2file 2> $temp_folder/serial_err.txt
+                        logfile=$(ls -t platformio-device-monitor* | head -1)
+                        echo $logfile
+                        mv $logfile $outfile
+                    fi
 
-					python trim_genkat_output.py $outfile > $temp_folder/kat.txt
+					python$EXT trim_genkat_output.py $outfile > $temp_folder/kat.txt
 
 					diff -w $temp_folder/kat.txt $impl_folder/$submission/$prim_dir/$variant/$kat_file > $difffile
+					#diff -w $outfile $kat_file_full_path > $difffile
 
 					diff_ret=$?
 
@@ -249,7 +273,7 @@ function measure_code_size() {
 			echo "#define LWC_MODE_USE_$mode" > src/lwc_mode.h
 
 			if [[ $prim == "aead" ]]; then
-				python gen_lwc_aead.py src/iut/$impl/lwc_crypto_aead.in $mode > src/iut/$impl/$infile
+				python$EXT gen_lwc_aead.py src/iut/$impl/lwc_crypto_aead.in $mode > src/iut/$impl/$infile
 			fi
 
 			# Skip if an output file exists
@@ -261,41 +285,13 @@ function measure_code_size() {
 
 				print_info "building implementation $impl with config $conf"
 
-				platformio.exe run --verbose --environment $conf > $outfile 2> $errfile
+				platformio$EXT run --verbose --environment $conf > $outfile 2> $errfile
 
 				if [[ "$?" -ne 0 ]]; then
 					print_error "build failed for $submission, $variant, $impl, $conf, $mode"
 					echo "build failed" > $outfile
 					printf ",error" >> $out_folder/sizes_raw.txt
-				else
-
-					if [[ $target == "nodemcuv2" ]]; then
-						data=$(awk '/^\.data\s/ {print $2}' $outfile)
-						text=$(awk '/^\.text\s/ {print $2}' $outfile)
-						irom=$(awk '/^\.irom0\.text\s/ {print $2}' $outfile)
-						text1=$(awk '/^\.text1\s/ {print $2}' $outfile)
-						rodata=$(awk '/^\.rodata\s/ {print $2}' $outfile)
-						bss=$(awk '/^\.bss\s/ {print $2}' $outfile)
-						printf ",$data,$text,$irom,$text1,$rodata,$bss" >> $out_folder/sizes_raw.txt
-					elif [[ $target == "nano_every" ]]; then
-						data=$(awk '/\.data\s/ {print $2}' $outfile)
-						text=$(awk '/\.text\s/ {print $2}' $outfile)
-						rodata=$(awk '/\.rodata\s/ {print $2}' $outfile)
-						bss=$(awk '/\.bss/ {print $2}' $outfile)
-						printf ",$data,$text,$rodata,$bss" >> $out_folder/sizes_raw.txt
-					elif [[ $target == "chipkit_mx3" ]]; then
-						data=$(python chipkit_codesize.py $outfile)
-						printf ",$data" >> $out_folder/sizes_raw.txt
-					else
-						bss=$(awk '/\.bss\s/ {print $2}' $outfile)
-						text=$(awk '/\.text\s/ {print $2}' $outfile)
-						data=$(awk '/\.data\s/ {print $2}' $outfile)
-						printf ",$text,$data,$bss" >> $out_folder/sizes_raw.txt
-					fi
-
 				fi
-
-				printf "\n" >> $out_folder/sizes_raw.txt
 
 			fi
 
@@ -329,7 +325,7 @@ function measure_timing() {
 
 			if [[ $prim == "aead" ]]; then
 				echo "#define LWC_MODE_TIMING_AEAD" > src/lwc_mode.h
-			else
+			elif [[ $prim == "hash" ]]; then
 				echo "#define LWC_MODE_TIMING_HASH" > src/lwc_mode.h
 			fi
 
@@ -339,23 +335,45 @@ function measure_timing() {
 			else
 				print_info "building implementation $impl with config $conf"
 
-				platformio.exe run --verbose --environment $conf > $buildout 2> $builderr
+				platformio$EXT run --verbose --environment $conf > $buildout 2> $builderr
 
 				if [[ "$?" -ne 0 ]]; then
 					print_error "build failed for $submission, $variant, $impl, $conf"
 					echo "build failed" > $outfile
-				else
-					stop_watch "uploading" 3
-					platformio.exe run --verbose --target upload --environment $conf > $uploadout 2> $uploaderr
-					sleep 3s
-					platformio.exe device monitor > $outfile&
-					PID=$!
-
-					wait_eof_marker
-
-					kill -9 $PID
 				fi
+				if [[ "$EXT" == ".exe" ]]; then
+					platformio$EXT run --verbose --environment $conf > $buildout 2> $builderr
 
+					if [[ "$?" -ne 0 ]]; then
+						print_error "build failed for $submission, $variant, $impl, $conf"
+						echo "build failed" > $outfile
+					else
+                		stop_watch "uploading" 3
+                    	platformio$EXT run --verbose --target upload --environment $conf > $temp_folder/upload_out.txt 2> $temp_folder/upload_err.txt
+                    	sleep 3s
+                    	platformio$EXT device monitor > $outfile& 2> $temp_folder/serial_err.txt
+                    	PID=$!
+
+                    	wait_eof_marker
+						
+                    	kill -9 $PID
+					fi
+                else
+					platformio$EXT run --verbose --environment $conf > $buildout 2> $builderr
+
+					if [[ "$?" -ne 0 ]]; then
+						print_error "build failed for $submission, $variant, $impl, $conf"
+						echo "build failed" > $outfile
+					else
+						stop_watch "uploading" 3
+						platformio$EXT run --verbose --target upload --environment $conf > $temp_folder/upload_out.txt 2> $temp_folder/upload_err.txt
+						sleep 3s
+						platformio$EXT device monitor --filter log2file 2> $temp_folder/serial_err.txt
+						logfile=$(ls -t platformio-device-monitor* | head -1)
+						echo $logfile
+						mv $logfile $outfile
+					fi
+				fi
 			fi
 
 		done # conf
@@ -371,7 +389,10 @@ function update_variant_count {
 
 	if [[ $prim == "aead" ]]; then
 		NumAEADVariants=$(($NumAEADVariants + 1))
-	else
+	elif [[ $prim == "hash" ]]; then
+        NumHashVariants=$(($NumHashVariants + 1))
+    else
+        NumAEADVariants=$(($NumAEADVariants + 1))
 		NumHashVariants=$(($NumHashVariants + 1))
 	fi
 }
@@ -380,8 +401,11 @@ function update_implementation_count {
 
 	if [[ $prim == "aead" ]]; then
 		NumAEADImplementations=$(($NumAEADImplementations + 1))
+	elif [[ $prim == "hash" ]]; then
+        NumHashImplementations=$(($NumHashImplementations + 1))
 	else
-		NumHashImplementations=$(($NumHashImplementations + 1))
+		NumAEADImplementations=$(($NumAEADImplementations + 1))
+        NumHashImplementations=$(($NumHashImplementations + 1))
 	fi
 }
 
@@ -404,6 +428,14 @@ function check_source_compatibility() {
 		impl_arch='armv7m'
 	elif [[ -r "$folder/lwc_arch_riscv" ]]; then
 		impl_arch='riscv'
+	elif [[ -r "$folder/lwc_arch_esp8266" ]]; then
+		impl_arch='esp8266'
+	elif [[ -r "$folder/lwc_arch_sse2" ]]; then
+		impl_arch='sse2'
+	elif [[ -r "$folder/lwc_arch_avx512" ]]; then
+		impl_arch='avx512'
+	elif [[ -r "$folder/lwc_arch_armv7a" ]]; then
+		impl_arch='armv7a'
 	fi
 
 	if [[ -z "$impl_arch" ]]; then
@@ -433,6 +465,7 @@ variants=""
 implementations=""
 aead=false
 hash=false
+combined=false
 process_primary=false
 overwrite=false
 
@@ -440,16 +473,17 @@ function print_usage() {
 	
 	echo "Usage: build.sh [-t | --target] target [options]
 		Options:
-		-t | --target <arg>     Target platform; one of {mkrzero, uno, nano33ble, nano_every, nodemcuv2, chipkit_mx3}.
+		-t | --target <arg>     Target platform; one of {mkrzero, uno, nano33ble, nano_every, nodemcuv2, chipkit_mx3, dueUSB}.
 		-e | --experiment <arg> Experiments to be performed; a subset of {kat, size, timing}.
 		-s | --submission <arg> List of submission names to be processed.
 		-v | --variant <arg>    List of variant names to be processed.
 		-i | --impl <arg>       List of implementation names to be processed.
 		-a | --aead             Process AEAD implementations.
 		-h | --hash             Process Hash implementations.
+		-c | --combined         Process Combined AEAD/Hash implementations.
 		-w | --overwrite        Do not skip an experiment if a result file already exists.
 		-p | --primary          Process only primary variants.
-
+src/lwc-benchmarking/outputs/dueUSB/kat/_reference_-aes-gcm-felicsv01-dueUSB-release-os-kat-err.txt src/lwc-benchmarking/outputs/dueUSB/kat/_reference_-aes-gcm-felicsv01-dueUSB-release-os-kat-build.txt
 	Note: If there are more than one arguments for -e, -s, -v, and -i, they must be provided 
 	      in double quotes and separated by space.
 	      Ex: -e \"kat size\"
@@ -470,6 +504,8 @@ function parse_args() {
 		-a | --aead)		aead=true
 							;;
 		-h | --hash)		hash=true
+							;;
+		-c | --combined)	combined=true
 							;;
 		-s | --submission)	shift
 							submissions="$submissions$1 "
@@ -518,7 +554,7 @@ fi
 
 # Construct the configuration names. These configurations must exist in platformio.ini file.
 configs=$(echo $target-release-{os,o1,o2,o3})
-#configs="$target-release-os"
+#configs=$(echo $target-release-o2)
 
 # Set and validate the experiment types
 if [[ -z "$experiments" ]]; then
@@ -544,6 +580,10 @@ if [[ $hash == true ]]; then
 	primitive_folders="$primitive_folders crypto_hash"
 fi
 
+if [[ $combined == true ]]; then
+	primitive_folders="$primitive_folders crypto_aead_hash"
+fi
+
 # If none specified, include all
 if [[ -z "$primitive_folders" ]]; then
 	primitive_folders="$primitive_folder_list"
@@ -560,12 +600,12 @@ if [[ -z "$submissions" ]]; then
 fi
 
 
-# Dump the variables
+# Print the variables
 echo "target            : $target"
 echo "configs           : $configs"
 echo "experiments       : $experiments"
-#echo "aead             : $aead"
-#echo "hash             : $hash"
+echo "aead              : $aead"
+echo "hash              : $hash"
 echo "primitive_folders : $primitive_folders"
 echo "submissions       : $submissions"
 echo "variants          : $variants"
@@ -573,8 +613,6 @@ echo "implementations   : $implementations"
 echo "process_primary   : $process_primary"
 echo "overwrite         : $overwrite"
 
-# DEBUG
-#exit 0
 
 # Supported ASM implementations by the target
 supported_impl=""
@@ -583,11 +621,13 @@ if [[ "$target" == "mkrzero" ]]; then
 elif [[ "$target" == "uno" ]]; then
 	supported_impl="avr"
 elif [[ "$target" == "nano33ble" ]]; then
-	supported_impl="armv6m armv7m"
+	supported_impl="armv6 armv6m armv7m"
 elif [[ "$target" == "nano_every" ]]; then
 	supported_impl="avr"
 elif [[ "$target" == "nodemcuv2" ]]; then
-	supported_impl="esp8266"
+	supported_impl="esp"
+elif [[ "$target" == "dueUSB" ]]; then
+	supported_impl="armv6m armv7m armv67m"
 fi
 
 
@@ -606,9 +646,6 @@ mkdir -p "$kat_folder"
 mkdir -p "$temp_folder"
 mkdir -p "$size_folder"
 mkdir -p "$timing_folder"
-
-#DEBUG
-#$exit 0
 
 for submission in $submissions; do
 
@@ -634,10 +671,14 @@ for submission in $submissions; do
 				prim="aead"
 				modes=$aead_modes
 				lwc_mode_genkat="#define LWC_MODE_GENKAT_AEAD"
-			else
+			elif [[ $prim_dir == "crypto_hash" ]]; then
 				prim="hash"
 				modes=$hash_modes
 				lwc_mode_genkat="#define LWC_MODE_GENKAT_HASH"
+			else
+				prim="aead_hash"
+				modes=$combined_modes
+				lwc_mode_genkat="#define LWC_MODE_GENKAT_COMBINED"
 			fi
 
 			cd $impl_folder/$submission/$prim_dir
@@ -688,9 +729,36 @@ for submission in $submissions; do
 
 				cd $impl_folder/$submission/$prim_dir/$variant
 
-				kat_file=$(ls LWC*.txt)
 
-				kat_file_full_path="$impl_folder/$submission/$prim_dir/$variant/$kat_file"
+                
+                
+                includes "kat" "${experiments[@]}"
+                process=$?
+
+                if [[ $process == 0 ]]; then
+                    print_warning "skipping KAT verification"
+                else
+                    # if combined mode, create combined KAT
+                    if [ $variant != "empty_aead" ] && [ "$variant" != "empty_hash" ] && [ "$variant" != "empty_aead_hash" ]; then
+                        kat_file=$(ls LWC*.txt)
+                        echo $kat_file
+                        cat $kat_file > KAT_Ref.txt
+                        kat_file_full_path="$impl_folder/$submission/$prim_dir/$variant/KAT_Ref.txt"
+                    fi
+                
+                    # Proceed only if there's a KAT file to diff
+                    echo $kat_file_full_path
+                    if [ ! -f $kat_file_full_path ]; then
+                        echo "KAT file not found for $submission $variant"
+                    else
+                        verify_kat
+                        retval=$?
+                        print_info "verify_kat() returned $retval"
+                    fi
+                fi
+                
+
+				
 
 				implementations_to_process=""
 
@@ -730,9 +798,6 @@ for submission in $submissions; do
 
 					update_implementation_count
 
-					# DEBUG
-					#continue
-
 					# Copy implementation folder to src/iut
 					rm -rf $base_folder/src/iut/*
 					cp -r $impl_folder/$submission/$prim_dir/$variant/$impl $base_folder/src/iut
@@ -763,12 +828,6 @@ for submission in $submissions; do
 						print_info "measure_code_size() returned $retval"
 					fi
 
-					# Do not perform KAT and Timing experiments if all builds for code size experiment have failed
-					#if [[ $process == 1 ]] && [[ $retval -eq 1 ]]; then
-					#	print_warning "skipping further experiments since all builds have failed in code size experiments"
-					#	continue
-					#fi
-
 					#
 					# KAT Verification
 					#
@@ -779,6 +838,7 @@ for submission in $submissions; do
 						print_warning "skipping KAT verification"
 					else
 						# Proceed only if there's a KAT file to diff
+						echo $kat_file_full_path
 						if [ ! -f $kat_file_full_path ]; then
 							echo "KAT file not found for $submission $variant"
 						else

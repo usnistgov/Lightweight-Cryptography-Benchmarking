@@ -43,7 +43,8 @@
 #include <Esp.h>
 #endif
 
-#ifdef LWC_MODE_GENKAT_AEAD
+//#ifdef LWC_MODE_GENKAT_AEAD
+#if defined(LWC_MODE_GENKAT_AEAD) || defined(LWC_MODE_GENKAT_COMBINED)
 
 int genkat_aead()
 {
@@ -127,7 +128,8 @@ int genkat_aead()
 #endif // LWC_MODE_GENKAT_AEAD
 
 
-#ifdef LWC_MODE_GENKAT_HASH
+//#ifdef LWC_MODE_GENKAT_HASH
+#if defined(LWC_MODE_GENKAT_HASH) || defined(LWC_MODE_GENKAT_COMBINED)
 
 int genkat_hash()
 {
@@ -177,11 +179,11 @@ int do_genkat_experiments()
 {
 	int ret{ 0 };
 
-#ifdef LWC_MODE_GENKAT_AEAD
+#if defined(LWC_MODE_GENKAT_AEAD) || defined(LWC_MODE_GENKAT_COMBINED)
 	ret = genkat_aead();
 #endif
 
-#ifdef LWC_MODE_GENKAT_HASH
+#if defined(LWC_MODE_GENKAT_HASH) || defined(LWC_MODE_GENKAT_COMBINED)
 	ret = genkat_hash();
 #endif
 

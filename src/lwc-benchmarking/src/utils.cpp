@@ -66,8 +66,12 @@ const char* get_platform_name()
         return "uno";
     #elif defined(LWC_PLATFORM_NODEMCUV2)
         return "nodemcuv2";
-    #elif defined(LWC_PLATFORM_PIC32MX)
+    #elif defined(LWC_PLATFORM_PIC32MX3)
         return "pic32mx";
+    #elif defined(LWC_PLATFORM_PIC32U32)
+        return "pic32uc32";
+    #elif defined(LWC_PLATFORM_DUEUSB)
+        return "dueUSB";
     #else
         return "Unknown platform";
     #endif

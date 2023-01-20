@@ -36,7 +36,7 @@
 
 const uint32_t ShortInputStep = 8;
 
-#if defined(LWC_PLATFORM_UNO) || defined(LWC_PLATFORM_NANOEVERY)
+#if defined(LWC_PLATFORM_UNO) || defined(LWC_PLATFORM_NANOEVERY) || defined(LWC_PLATFORM_DUEUSB)
     using timer = timer_micros;
     const uint32_t Trials = 5;
     const uint32_t MaxLongInputLength = 512;
@@ -364,12 +364,12 @@ int do_timing_experiments()
     systick_reload_max srm;
 #endif
 
-#if defined(LWC_MODE_TIMING_AEAD)
-
+#if defined(LWC_MODE_TIMING_AEAD) && defined(LWC_MODE_TIMING_HASH)
     ret = aead_timing_experiments();
-
+    ret |= hash_timing_experiments();
+#elif defined(LWC_MODE_TIMING_AEAD)
+    ret = aead_timing_experiments();
 #elif defined(LWC_MODE_TIMING_HASH)
-
     ret = hash_timing_experiments();
 
 #endif

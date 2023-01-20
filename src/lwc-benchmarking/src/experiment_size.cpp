@@ -32,7 +32,7 @@
 #include "lwc_benchmark.h"
 
 
-#if defined(LWC_MODE_USE_AEAD_ENCRYPT) || defined(LWC_MODE_USE_AEAD_DECRYPT) || defined(LWC_MODE_USE_AEAD_BOTH)
+#if defined(LWC_MODE_USE_AEAD_ENCRYPT) || defined(LWC_MODE_USE_AEAD_DECRYPT) || defined(LWC_MODE_USE_AEAD_BOTH) || defined(LWC_MODE_USE_COMBINED_AEAD_ENCRYPT) || defined(LWC_MODE_USE_COMBINED_AEAD_DECRYPT) || defined(LWC_MODE_USE_COMBINED_AEAD_BOTH)
 int use_aead()
 {
 	buffer<32> key;
@@ -45,12 +45,12 @@ int use_aead()
 	nonce.init();
 	buf.init();
 
-#if defined(LWC_MODE_USE_AEAD_ENCRYPT) || defined(LWC_MODE_USE_AEAD_BOTH)
+#if defined(LWC_MODE_USE_AEAD_ENCRYPT) || defined(LWC_MODE_USE_AEAD_BOTH) || defined(LWC_MODE_USE_COMBINED_AEAD_ENCRYPT) || defined(LWC_MODE_USE_COMBINED_AEAD_BOTH)
 	ret = lwc_aead_cipher.encrypt(buf.data(), &len, nullptr, 0, nullptr, 0, nullptr, nonce.data(), key.data());
 	//SOUT << "crypto_aead_encrypt() returned " << ret << SENDL;
 #endif // LWC_MODE_USE_AEAD_ENCRYPT
 
-#if defined(LWC_MODE_USE_AEAD_DECRYPT) || defined(LWC_MODE_USE_AEAD_BOTH)
+#if defined(LWC_MODE_USE_AEAD_DECRYPT) || defined(LWC_MODE_USE_AEAD_BOTH) || defined(LWC_MODE_USE_COMBINED_AEAD_DECRYPT) || defined(LWC_MODE_USE_COMBINED_AEAD_BOTH)
 	ret = lwc_aead_cipher.decrypt(nullptr, &len, nullptr, buf.data(), lwc_aead_cipher.ABytes, nullptr, 0, nonce.data(), key.data());
 	//SOUT << "crypto_aead_decrypt() returned " << ret << SENDL;
 #endif // LWC_MODE_USE_AEAD_DECRYPT
@@ -59,7 +59,7 @@ int use_aead()
 }
 #endif // defined(LWC_MODE_USE_AEAD_ENCRYPT) || defined(LWC_MODE_USE_AEAD_DECRYPT)
 
-#if defined(LWC_MODE_USE_HASH)
+#if defined(LWC_MODE_USE_HASH) || defined(LWC_MODE_USE_COMBINED_AEAD_ENCRYPT) || defined(LWC_MODE_USE_COMBINED_AEAD_DECRYPT) || defined(LWC_MODE_USE_COMBINED_AEAD_BOTH)
 int use_hash()
 {
 	buffer<32> digest;
@@ -75,11 +75,11 @@ int do_size_experiments()
 {
 	int ret{ 0 };
 
-#if defined(LWC_MODE_USE_AEAD_ENCRYPT) || defined(LWC_MODE_USE_AEAD_DECRYPT) || defined(LWC_MODE_USE_AEAD_BOTH)
+#if defined(LWC_MODE_USE_AEAD_ENCRYPT) || defined(LWC_MODE_USE_AEAD_DECRYPT) || defined(LWC_MODE_USE_AEAD_BOTH) || defined(LWC_MODE_USE_COMBINED_AEAD_ENCRYPT) || defined(LWC_MODE_USE_COMBINED_AEAD_DECRYPT) || defined(LWC_MODE_USE_COMBINED_AEAD_BOTH)
 	ret = use_aead();
 #endif
 
-#ifdef LWC_MODE_USE_HASH
+#if defined(LWC_MODE_USE_HASH) ||  defined(LWC_MODE_USE_COMBINED_AEAD_ENCRYPT) || defined(LWC_MODE_USE_COMBINED_AEAD_DECRYPT) || defined(LWC_MODE_USE_COMBINED_AEAD_BOTH)
 	ret = use_hash();
 #endif
 
