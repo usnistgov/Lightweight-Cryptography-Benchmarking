@@ -1,16 +1,16 @@
 ### Benchmark Results
 
-This page contains the benchmark results grouped with respect to the microcontroller and functionality (AEAD or Hash). Each result file contains code size and timing measurements for all the implementations that have been benchmarked. Description of the column names in the `csv` files are as follows:
+This page contains the benchmark results grouped with respect to the microcontroller and functionality (AEAD or Hash). Each result file contains code size and timing measurements for all the implementations that have been benchmarked. Descriptions of the column names in the `csv` files are as follows:
 
  - `submission` : submission name
  - `variant` : variant name
  - `implementation` : implementation name (matches the name of the folder that contains the implementation)
  - `primary` : indicates whether the variant is primary or not
- - `flag` : optimization flag used in compilation (one of Os, O1, O2, O3)
- - `size` : code+data size (in bytes) where data includes any constant/non-constant data that ends up in the binary (.bss section is excluded)
- - `enc(x:y)` : timing measurement (microseconds on AVR, cycles otherwise) for AEAD encryption of `x` bytes of associated data and `y` bytes of message
- - `dec(x:y)` : timing measurement (microseconds on AVR, cycles otherwise) for AEAD decryption whose input is `x` bytes of associated data and the ciphertext obtained from encrypting `x` bytes of associated data and `y` bytes of message
- - `h(x)` : timing measurement (microseconds on AVR, cycles otherwise) for hashing `x` bytes of message
+ - `config` : optimization flag used in compilation (one of Os, O1, O2, O3)
+ - `size` : flash size (in bytes) 
+ - `enc(x:y)` : timing measurement (in microseconds or cycles) for AEAD encryption of `x` bytes of associated data and `y` bytes of message
+ - `dec(x:y)` : timing measurement (in microseconds or cycles) for AEAD decryption whose input is `x` bytes of associated data and the ciphertext obtained from encrypting `x` bytes of associated data and `y` bytes of message
+ - `h(x)` : timing measurement (in microseconds or cycles) for hashing `x` bytes of message
 
 ### Notes
 
