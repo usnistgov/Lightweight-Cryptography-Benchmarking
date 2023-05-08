@@ -27,19 +27,22 @@ More information on implementations included in this effort can be found [here](
 
 # Platforms
 
-Currently, the benchmarking is being performed on the following development boards:
+Benchmarking was performed on the following development boards:
 
- - [Arduino Uno R3 (AVR ATmega328P)](https://store.arduino.cc/usa/arduino-uno-rev3)
- - [Arduino Nano Every (AVR ATmega4809)](https://store.arduino.cc/usa/nano-every)
- - [Arduino MKR Zero (ARM Cortex-M0+)](https://store.arduino.cc/usa/arduino-mkrzero)
- - [Arduino Nano 33 BLE (ARM Cortex-M4)](https://store.arduino.cc/usa/nano-33-ble)
- - [Arduino Due (AARM Cortex-M3)](https://store.arduino.cc/products/arduino-due)
- - [Digilent uC32 (PIC32MX340F512H)](https://store.digilentinc.com/uc32-arduino-programmable-pic32-microcontroller-board-limited-time/)
- - [Espressif ESP8266 (Tensilica L106)](https://www.espressif.com/en/products/socs/esp8266)
+ - Arduino Uno R3 (ATmega328P)
+ - Arduino Nano Every (ATmega4809)
+ - Arduino MKR Zero (SAMD21G18A)
+ - Arduino Nano 33 BLE (nRF52840)
+ - Arduino Due (AT91SAM3X8E)
+ - Digilent uC32 (PIC32MX340F512H)
+ - Digilent chipKIT MX3 (PIC32MX320F128H)[^1]
+ - NodeMCU v2 (ESP8266)
+ 
+[^1]: Digilent uC32 board used with chipKIT MX3 memory profile.
 
 # Results
 
-The latest benchmarking results can be found [here](benchmarks/).
+Benchmarking results can be found [here](benchmarks/).
 
 # Contact
 
