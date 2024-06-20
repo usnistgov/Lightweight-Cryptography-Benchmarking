@@ -20,11 +20,15 @@ The experiment that is going to be carried out is defined in the `lwc_mode.h` fi
 | :------ | :------: | :----- |
 | LWC_MODE_GENKAT_AEAD | KAT | Generates KAT file for the AEAD implementation.|
 | LWC_MODE_GENKAT_HASH | KAT | Generates KAT file for the Hash implementation.|
-| LWC_MODE_USE_AEAD_ENCRYPT | Code Size | Only AEAD encryption function is used.
-| LWC_MODE_USE_AEAD_DECRYPT | Code Size | Only AEAD decryption function is used.
-| LWC_MODE_USE_AEAD_BOTH | Code Size | AEAD encryption and decryption functions are both used.
+| LWC_MODE_GENKAT_COMBINED | KAT | Generates KAT file for the combined AEAD and Hash implementation.|
+| LWC_MODE_USE_AEAD_ENCRYPT | Code Size | Only AEAD encryption function is used.|
+| LWC_MODE_USE_AEAD_DECRYPT | Code Size | Only AEAD decryption function is used.|
+| LWC_MODE_USE_AEAD_BOTH | Code Size | AEAD encryption and decryption functions are both used.|
 | LWC_MODE_USE_HASH | Code Size | Hash function is invoked once.|
-| LWC_MODE_TIMING_AEAD | Timing | Performs timing measurements for the AEAD implementation.
+| LWC_MODE_USE_COMBINED_AEAD_ENCRYPT | Code Size | AEAD encryption and Hash functions are used.|
+| LWC_MODE_USE_COMBINED_AEAD_DECRYPT | Code Size | AEAD decryption and Hash functions are used.|
+| LWC_MODE_USE_COMBINED_AEAD_BOTH | Code Size | AEAD encryption, AEAD decryption, and Hash functions are used.|
+| LWC_MODE_TIMING_AEAD | Timing | Performs timing measurements for the AEAD implementation.|
 | LWC_MODE_TIMING_HASH | Timing | Performs timing measurements for the Hash implementation.|
 
 
